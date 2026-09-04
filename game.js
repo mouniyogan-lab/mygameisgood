@@ -1,4 +1,4 @@
-const SERVER_URL = window.location.origin;
+const SERVER_URL = "https://mygameisgood.onrender.com";
 
 const socket = io(SERVER_URL, {
   transports: ["websocket", "polling"],
