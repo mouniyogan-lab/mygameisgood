@@ -21,6 +21,7 @@
       color: #ffffff;
       font-family: Arial, Helvetica, sans-serif;
       user-select: none;
+      -webkit-user-select: none;
     }
 
     #game {
@@ -157,7 +158,6 @@
       letter-spacing: 2px;
       opacity: 0;
       pointer-events: none;
-      text-shadow: 0 0 18px rgba(255, 190, 50, 0.8);
     }
 
     #shopButton {
@@ -173,11 +173,6 @@
       font-weight: 900;
       letter-spacing: 1px;
       cursor: pointer;
-    }
-
-    #shopButton:hover {
-      background: rgba(7, 28, 44, 0.98);
-      box-shadow: 0 0 18px rgba(0, 180, 255, 0.18);
     }
 
     #shopPanel {
@@ -227,9 +222,9 @@
     .gunCard {
       margin-bottom: 12px;
       padding: 16px;
-      border: 1px solid rgba(255,255,255,0.1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 11px;
-      background: rgba(255,255,255,0.035);
+      background: rgba(255, 255, 255, 0.035);
     }
 
     .gunTop {
@@ -265,16 +260,8 @@
       background: #9d6e16;
     }
 
-    .buyButton:hover {
-      background: #c38a1d;
-    }
-
     .equipButton {
       background: #146e99;
-    }
-
-    .equipButton:hover {
-      background: #1988b9;
     }
 
     .equippedButton {
@@ -304,9 +291,6 @@
       border: 1px solid rgba(0, 220, 255, 0.3);
       border-radius: 18px;
       background: rgba(4, 10, 18, 0.91);
-      box-shadow:
-        0 0 80px rgba(0, 180, 255, 0.08),
-        inset 0 0 30px rgba(0, 180, 255, 0.025);
       text-align: center;
     }
 
@@ -315,9 +299,6 @@
       line-height: 0.95;
       margin-bottom: 12px;
       letter-spacing: 4px;
-      text-shadow:
-        0 0 10px rgba(0, 210, 255, 0.5),
-        0 0 35px rgba(0, 170, 255, 0.18);
     }
 
     #startPanel .subtitle {
@@ -335,15 +316,10 @@
       border: 1px solid rgba(100, 220, 255, 0.28);
       border-radius: 9px;
       outline: none;
-      background: rgba(255,255,255,0.04);
+      background: rgba(255, 255, 255, 0.04);
       color: #ffffff;
       font-size: 16px;
       text-align: center;
-    }
-
-    #usernameInput:focus {
-      border-color: rgba(0,220,255,0.8);
-      box-shadow: 0 0 15px rgba(0,200,255,0.12);
     }
 
     #playButton {
@@ -359,10 +335,6 @@
       cursor: pointer;
     }
 
-    #playButton:hover {
-      box-shadow: 0 10px 35px rgba(0,140,255,0.23);
-    }
-
     #controlsText {
       margin-top: 20px;
       color: #8f9eac;
@@ -376,31 +348,15 @@
       color: #ffce62;
       font-size: 13px;
     }
-
-    @media (max-width: 600px) {
-      #hud {
-        top: 10px;
-        left: 10px;
-        min-width: 180px;
-        padding: 9px 12px;
-      }
-
-      .hudRow {
-        font-size: 13px;
-      }
-
-      #shopButton {
-        left: 10px;
-        bottom: 10px;
-      }
-    }
   </style>
 </head>
 
 <body>
+
   <div id="game"></div>
 
   <div id="hud">
+
     <div class="hudRow">
       <span class="hudLabel">HEALTH</span>
       <span id="healthValue">100</span>
@@ -425,29 +381,59 @@
       <span class="hudLabel">GUN</span>
       <span id="gunValue">PISTOL</span>
     </div>
+
   </div>
 
   <div id="crosshair"></div>
+
   <div id="damageFlash"></div>
+
   <div id="hitMarker">✕</div>
+
   <div id="killMessage">+10 COINS</div>
 
-  <button id="shopButton">GUN SHOP [B]</button>
+
+  <!-- GUN SHOP BUTTON -->
+
+  <button id="shopButton">
+    GUN SHOP [B]
+  </button>
+
+
+  <!-- GUN SHOP -->
 
   <div id="shopPanel">
+
     <div id="shopHeader">
+
       <h2>GUN SHOP</h2>
-      <button id="closeShop">✕</button>
+
+      <button id="closeShop">
+        ✕
+      </button>
+
     </div>
 
-    <div id="shopCoins">Coins: 0</div>
+    <div id="shopCoins">
+      Coins: 0
+    </div>
+
     <div id="gunList"></div>
+
   </div>
 
+
+  <!-- START SCREEN -->
+
   <div id="startOverlay">
+
     <div id="startPanel">
+
       <h1>NEON STRIKE</h1>
-      <div class="subtitle">MULTIPLAYER FPS</div>
+
+      <div class="subtitle">
+        MULTIPLAYER FPS
+      </div>
 
       <input
         id="usernameInput"
@@ -463,22 +449,43 @@
       </button>
 
       <div id="controlsText">
+
         WASD — MOVE<br>
+
         MOUSE — LOOK<br>
+
         LEFT CLICK — FIRE<br>
-        B — GUN SHOP<br>
-        ESC — RELEASE MOUSE
+
+        SPACE — JUMP<br>
+
+        B — GUN SHOP
+
       </div>
 
       <div id="statusText">
         Connecting to server...
       </div>
+
     </div>
+
   </div>
 
+
+  <!-- THREE.JS -->
+
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+
+  <!-- POINTER LOCK -->
+
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+
+  <!-- SOCKET.IO -->
+
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+  <!-- YOUR GAME -->
+
   <script src="game.js"></script>
+
 </body>
 </html>
