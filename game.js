@@ -228,6 +228,13 @@ const movement = {
   right: false
 };
 
+let verticalVelocity = 0;
+let isGrounded = true;
+
+const jumpStrength = 10;
+const gravity = 28;
+const groundY = 2.1;
+
 const otherPlayers =
   new Map();
 
@@ -1341,7 +1348,22 @@ window.addEventListener(
       movement.right =
         true;
     }
+if (
+  event.code ===
+  "Space"
+) {
+  if (
+    isGrounded &&
+    controls.isLocked &&
+    playerJoined
+  ) {
+    verticalVelocity =
+      jumpStrength;
 
+    isGrounded =
+      false;
+  }
+}
     if (
       event.code ===
       "KeyB"
@@ -1594,8 +1616,25 @@ function updateMovement(
         next.z;
     }
 
-    camera.position.y =
-      2.1;
+    verticalVelocity -=
+  gravity * delta;
+
+camera.position.y +=
+  verticalVelocity * delta;
+
+if (
+  camera.position.y <=
+  groundY
+) {
+  camera.position.y =
+    groundY;
+
+  verticalVelocity =
+    0;
+
+  isGrounded =
+    true;
+}
   }
 
   networkTimer +=
