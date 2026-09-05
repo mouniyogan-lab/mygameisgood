@@ -169,7 +169,9 @@ let playerJoined =
   false;
 
 let health = 100;
+
 let score = 0;
+
 let coins = 0;
 
 let currentGun =
@@ -234,10 +236,13 @@ const movement = {
 };
 
 let verticalVelocity = 0;
+
 let isGrounded = true;
 
 const jumpStrength = 10;
+
 const gravity = 28;
+
 const groundY = 2.1;
 
 const otherPlayers =
@@ -252,12 +257,12 @@ const clock =
 
 const arenaSize = 120;
 
-const playerRadius =
-  0.65;
+const playerRadius = 0.65;
 
 let lastShotTime = 0;
 
 let networkTimer = 0;
+
 
 /* ======================================================
    LIGHTING
@@ -325,13 +330,9 @@ red.position.set(
 
 scene.add(red);
 
-```js
-/* ======================================================
-   REALISTIC FPS MAP
-====================================================== */
 
 /* ======================================================
-   FLOOR
+   MAP MATERIALS
 ====================================================== */
 
 const floorMaterial =
@@ -340,6 +341,60 @@ const floorMaterial =
     roughness: 0.92,
     metalness: 0.08
   });
+
+const wallMaterial =
+  new THREE.MeshStandardMaterial({
+    color: 0x30353a,
+    roughness: 0.82,
+    metalness: 0.18
+  });
+
+const darkWallMaterial =
+  new THREE.MeshStandardMaterial({
+    color: 0x1d2227,
+    roughness: 0.78,
+    metalness: 0.25
+  });
+
+const concreteMaterial =
+  new THREE.MeshStandardMaterial({
+    color: 0x4b5054,
+    roughness: 0.9,
+    metalness: 0.08
+  });
+
+const metalMaterial =
+  new THREE.MeshStandardMaterial({
+    color: 0x343a40,
+    roughness: 0.38,
+    metalness: 0.82
+  });
+
+const crateMaterial =
+  new THREE.MeshStandardMaterial({
+    color: 0x695039,
+    roughness: 0.86,
+    metalness: 0.02
+  });
+
+const warningMaterial =
+  new THREE.MeshStandardMaterial({
+    color: 0x8a741f,
+    roughness: 0.65,
+    metalness: 0.2
+  });
+
+const redMaterial =
+  new THREE.MeshStandardMaterial({
+    color: 0x70242c,
+    roughness: 0.7,
+    metalness: 0.3
+  });
+
+
+/* ======================================================
+   FLOOR
+====================================================== */
 
 const floor =
   new THREE.Mesh(
@@ -354,8 +409,7 @@ const floor =
 floor.position.y =
   -0.35;
 
-floor.receiveShadow =
-  true;
+floor.receiveShadow = true;
 
 scene.add(floor);
 
@@ -417,57 +471,61 @@ for (
 
 
 /* ======================================================
-   MAP MATERIALS
+   COLLISION BOX HELPER
 ====================================================== */
 
-const wallMaterial =
-  new THREE.MeshStandardMaterial({
-    color: 0x30353a,
-    roughness: 0.82,
-    metalness: 0.18
+function addBox(
+  x,
+  y,
+  z,
+  width,
+  height,
+  depth,
+  material = concreteMaterial
+) {
+  const mesh =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        width,
+        height,
+        depth
+      ),
+      material
+    );
+
+  mesh.position.set(
+    x,
+    y + height / 2,
+    z
+  );
+
+  mesh.castShadow = true;
+
+  mesh.receiveShadow = true;
+
+  scene.add(mesh);
+
+  collisionBoxes.push({
+    minX:
+      x - width / 2,
+
+    maxX:
+      x + width / 2,
+
+    minY: 0,
+
+    maxY:
+      height,
+
+    minZ:
+      z - depth / 2,
+
+    maxZ:
+      z + depth / 2
   });
 
-const darkWallMaterial =
-  new THREE.MeshStandardMaterial({
-    color: 0x1d2227,
-    roughness: 0.78,
-    metalness: 0.25
-  });
-
-const concreteMaterial =
-  new THREE.MeshStandardMaterial({
-    color: 0x4b5054,
-    roughness: 0.9,
-    metalness: 0.08
-  });
-
-const metalMaterial =
-  new THREE.MeshStandardMaterial({
-    color: 0x343a40,
-    roughness: 0.38,
-    metalness: 0.82
-  });
-
-const crateMaterial =
-  new THREE.MeshStandardMaterial({
-    color: 0x695039,
-    roughness: 0.86,
-    metalness: 0.02
-  });
-
-const warningMaterial =
-  new THREE.MeshStandardMaterial({
-    color: 0x8a741f,
-    roughness: 0.65,
-    metalness: 0.2
-  });
-
-const redMaterial =
-  new THREE.MeshStandardMaterial({
-    color: 0x70242c,
-    roughness: 0.7,
-    metalness: 0.3
-  });
+  return mesh;
+}
 
 
 /* ======================================================
@@ -498,11 +556,9 @@ function createMapWall(
     z
   );
 
-  wall.castShadow =
-    true;
+  wall.castShadow = true;
 
-  wall.receiveShadow =
-    true;
+  wall.receiveShadow = true;
 
   scene.add(wall);
 
@@ -523,6 +579,25 @@ function createMapWall(
   );
 
   scene.add(top);
+
+  collisionBoxes.push({
+    minX:
+      x - width / 2,
+
+    maxX:
+      x + width / 2,
+
+    minY: 0,
+
+    maxY:
+      height,
+
+    minZ:
+      z - depth / 2,
+
+    maxZ:
+      z + depth / 2
+  });
 }
 
 createMapWall(
@@ -563,7 +638,7 @@ createMapWall(
 
 
 /* ======================================================
-   BUILDING HELPER
+   BUILDINGS
 ====================================================== */
 
 function createBuilding(
@@ -589,15 +664,12 @@ function createBuilding(
     z
   );
 
-  building.castShadow =
-    true;
+  building.castShadow = true;
 
-  building.receiveShadow =
-    true;
+  building.receiveShadow = true;
 
   scene.add(building);
 
-  // Roof
   const roof =
     new THREE.Mesh(
       new THREE.BoxGeometry(
@@ -614,8 +686,7 @@ function createBuilding(
     z
   );
 
-  roof.castShadow =
-    true;
+  roof.castShadow = true;
 
   scene.add(roof);
 
@@ -626,8 +697,7 @@ function createBuilding(
     maxX:
       x + width / 2,
 
-    minY:
-      0,
+    minY: 0,
 
     maxY:
       height,
@@ -641,11 +711,6 @@ function createBuilding(
 
   return building;
 }
-
-
-/* ======================================================
-   BUILDINGS
-====================================================== */
 
 createBuilding(
   -40,
@@ -686,7 +751,7 @@ createBuilding(
 
 addBox(
   0,
-  3.5,
+  0,
   -17,
   28,
   7,
@@ -696,7 +761,7 @@ addBox(
 
 addBox(
   -14,
-  3.5,
+  0,
   -8,
   3,
   7,
@@ -706,7 +771,7 @@ addBox(
 
 addBox(
   14,
-  3.5,
+  0,
   -8,
   3,
   7,
@@ -721,7 +786,7 @@ addBox(
 
 addBox(
   -30,
-  1.5,
+  0,
   2,
   14,
   3,
@@ -731,7 +796,7 @@ addBox(
 
 addBox(
   30,
-  1.5,
+  0,
   2,
   14,
   3,
@@ -741,7 +806,7 @@ addBox(
 
 addBox(
   -7,
-  1.5,
+  0,
   12,
   12,
   3,
@@ -751,7 +816,7 @@ addBox(
 
 addBox(
   7,
-  1.5,
+  0,
   12,
   12,
   3,
@@ -814,7 +879,7 @@ function createCrate(
 
   return addBox(
     x,
-    (size * scaleY) / 2,
+    0,
     z,
     size,
     size * scaleY,
@@ -823,74 +888,20 @@ function createCrate(
   );
 }
 
+createCrate(-38, -8);
+createCrate(-35, -8);
+createCrate(-38, -5);
+createCrate(-35, -5);
 
-// Left warehouse crates
+createCrate(38, -8);
+createCrate(35, -8);
+createCrate(38, -5);
+createCrate(35, -5);
 
-createCrate(
-  -38,
-  -8
-);
-
-createCrate(
-  -35,
-  -8
-);
-
-createCrate(
-  -38,
-  -5
-);
-
-createCrate(
-  -35,
-  -5
-);
-
-
-// Right warehouse crates
-
-createCrate(
-  38,
-  -8
-);
-
-createCrate(
-  35,
-  -8
-);
-
-createCrate(
-  38,
-  -5
-);
-
-createCrate(
-  35,
-  -5
-);
-
-
-// Front crates
-
-createCrate(
-  -10,
-  35
-);
-
-createCrate(
-  -7,
-  35
-);
-
-createCrate(
-  10,
-  35
-);
-
-createCrate(
-  7,
-  35
-);
+createCrate(-10, 35);
+createCrate(-7, 35);
+createCrate(10, 35);
+createCrate(7, 35);
 
 
 /* ======================================================
@@ -915,11 +926,9 @@ function createBarrier(
       warningMaterial
     );
 
-  body.castShadow =
-    true;
+  body.castShadow = true;
 
-  body.receiveShadow =
-    true;
+  body.receiveShadow = true;
 
   barrier.add(body);
 
@@ -983,11 +992,9 @@ function createBarrier(
     maxX:
       x + width / 2,
 
-    minY:
-      0,
+    minY: 0,
 
-    maxY:
-      1.5,
+    maxY: 1.5,
 
     minZ:
       z - depth / 2,
@@ -1046,11 +1053,9 @@ function createPillar(
     z
   );
 
-  pillar.castShadow =
-    true;
+  pillar.castShadow = true;
 
-  pillar.receiveShadow =
-    true;
+  pillar.receiveShadow = true;
 
   scene.add(pillar);
 
@@ -1061,11 +1066,9 @@ function createPillar(
     maxX:
       x + 0.7,
 
-    minY:
-      0,
+    minY: 0,
 
-    maxY:
-      7,
+    maxY: 7,
 
     minZ:
       z - 0.7,
@@ -1075,25 +1078,10 @@ function createPillar(
   });
 }
 
-createPillar(
-  -20,
-  -25
-);
-
-createPillar(
-  20,
-  -25
-);
-
-createPillar(
-  -20,
-  15
-);
-
-createPillar(
-  20,
-  15
-);
+createPillar(-20, -25);
+createPillar(20, -25);
+createPillar(-20, 15);
+createPillar(20, 15);
 
 
 /* ======================================================
@@ -1130,8 +1118,7 @@ function createPipe(
   pipe.rotation.y =
     rotationY;
 
-  pipe.castShadow =
-    true;
+  pipe.castShadow = true;
 
   scene.add(pipe);
 }
@@ -1184,8 +1171,7 @@ function createStreetLight(
     z
   );
 
-  pole.castShadow =
-    true;
+  pole.castShadow = true;
 
   scene.add(pole);
 
@@ -1224,25 +1210,10 @@ function createStreetLight(
   scene.add(light);
 }
 
-createStreetLight(
-  -30,
-  -35
-);
-
-createStreetLight(
-  30,
-  -35
-);
-
-createStreetLight(
-  -30,
-  35
-);
-
-createStreetLight(
-  30,
-  35
-);
+createStreetLight(-30, -35);
+createStreetLight(30, -35);
+createStreetLight(-30, 35);
+createStreetLight(30, 35);
 
 
 /* ======================================================
@@ -1347,33 +1318,10 @@ function createStripe(
   scene.add(stripe);
 }
 
-createStripe(
-  -8,
-  -43,
-  10,
-  0.35
-);
-
-createStripe(
-  8,
-  -43,
-  10,
-  0.35
-);
-
-createStripe(
-  -8,
-  43,
-  10,
-  0.35
-);
-
-createStripe(
-  8,
-  43,
-  10,
-  0.35
-);
+createStripe(-8, -43, 10, 0.35);
+createStripe(8, -43, 10, 0.35);
+createStripe(-8, 43, 10, 0.35);
+createStripe(8, 43, 10, 0.35);
 
 
 /* ======================================================
@@ -1386,7 +1334,6 @@ scene.fog =
     38,
     155
   );
-```
 
 
 /* ======================================================
@@ -1549,6 +1496,7 @@ muzzlePoint.position.set(
 gun.add(muzzlePoint);
 
 camera.add(gun);
+
 scene.add(camera);
 
 const muzzleFlash =
@@ -1566,6 +1514,7 @@ muzzleFlash.position.set(
 );
 
 gun.add(muzzleFlash);
+
 
 /* ======================================================
    GUN VISUALS
@@ -1598,8 +1547,9 @@ function applyGunVisual() {
     weapon.name.toUpperCase();
 }
 
+
 /* ======================================================
-   TRACER PROJECTILES
+   TRACERS
 ====================================================== */
 
 function createTracer(
@@ -1658,7 +1608,9 @@ function createTracer(
     0.35;
 
   group.add(core);
+
   group.add(glow);
+
   group.add(trail);
 
   group.position.copy(
@@ -1675,18 +1627,22 @@ function createTracer(
 
   projectiles.push({
     mesh: group,
+
     velocity:
       direction
         .clone()
         .normalize()
         .multiplyScalar(105),
+
     ownerId,
+
     age: 0
   });
 }
 
+
 /* ======================================================
-   NAME TAGS
+   NAME TAG
 ====================================================== */
 
 function createNameTag(
@@ -1698,6 +1654,7 @@ function createNameTag(
     );
 
   canvas.width = 512;
+
   canvas.height = 128;
 
   const ctx =
@@ -1768,6 +1725,7 @@ function createNameTag(
   return sprite;
 }
 
+
 /* ======================================================
    OTHER PLAYER
 ====================================================== */
@@ -1796,8 +1754,7 @@ function createOtherPlayer(
   body.position.y =
     1.15;
 
-  body.castShadow =
-    true;
+  body.castShadow = true;
 
   group.add(body);
 
@@ -1951,6 +1908,7 @@ function createOtherPlayer(
   return group;
 }
 
+
 /* ======================================================
    INPUT
 ====================================================== */
@@ -1962,49 +1920,46 @@ window.addEventListener(
       event.code ===
       "KeyW"
     ) {
-      movement.forward =
-        true;
+      movement.forward = true;
     }
 
     if (
       event.code ===
       "KeyS"
     ) {
-      movement.backward =
-        true;
+      movement.backward = true;
     }
 
     if (
       event.code ===
       "KeyA"
     ) {
-      movement.left =
-        true;
+      movement.left = true;
     }
 
     if (
       event.code ===
       "KeyD"
     ) {
-      movement.right =
-        true;
+      movement.right = true;
     }
-if (
-  event.code ===
-  "Space"
-) {
-  if (
-    isGrounded &&
-    controls.isLocked &&
-    playerJoined
-  ) {
-    verticalVelocity =
-      jumpStrength;
 
-    isGrounded =
-      false;
-  }
-}
+    if (
+      event.code ===
+      "Space"
+    ) {
+      if (
+        isGrounded &&
+        controls.isLocked &&
+        playerJoined
+      ) {
+        verticalVelocity =
+          jumpStrength;
+
+        isGrounded = false;
+      }
+    }
+
     if (
       event.code ===
       "KeyB"
@@ -2032,32 +1987,28 @@ window.addEventListener(
       event.code ===
       "KeyW"
     ) {
-      movement.forward =
-        false;
+      movement.forward = false;
     }
 
     if (
       event.code ===
       "KeyS"
     ) {
-      movement.backward =
-        false;
+      movement.backward = false;
     }
 
     if (
       event.code ===
       "KeyA"
     ) {
-      movement.left =
-        false;
+      movement.left = false;
     }
 
     if (
       event.code ===
       "KeyD"
     ) {
-      movement.right =
-        false;
+      movement.right = false;
     }
   }
 );
@@ -2065,19 +2016,16 @@ window.addEventListener(
 window.addEventListener(
   "blur",
   () => {
-    movement.forward =
-      false;
+    movement.forward = false;
 
-    movement.backward =
-      false;
+    movement.backward = false;
 
-    movement.left =
-      false;
+    movement.left = false;
 
-    movement.right =
-      false;
+    movement.right = false;
   }
 );
+
 
 /* ======================================================
    COLLISION
@@ -2117,8 +2065,7 @@ function collides(
     playerRadius;
 
   for (
-    const box of
-    collisionBoxes
+    const box of collisionBoxes
   ) {
     if (
       maxX > box.minX &&
@@ -2132,6 +2079,7 @@ function collides(
 
   return false;
 }
+
 
 /* ======================================================
    MOVEMENT
@@ -2228,8 +2176,7 @@ function updateMovement(
     );
 
     if (
-      velocity.lengthSq() >
-      0
+      velocity.lengthSq() > 0
     ) {
       velocity.normalize();
 
@@ -2256,26 +2203,27 @@ function updateMovement(
       camera.position.z =
         next.z;
     }
+  }
 
-    verticalVelocity -=
-  gravity * delta;
+  /* GRAVITY ALWAYS RUNS */
 
-camera.position.y +=
-  verticalVelocity * delta;
+  verticalVelocity -=
+    gravity * delta;
 
-if (
-  camera.position.y <=
-  groundY
-) {
-  camera.position.y =
-    groundY;
+  camera.position.y +=
+    verticalVelocity * delta;
 
-  verticalVelocity =
-    0;
+  if (
+    camera.position.y <=
+    groundY
+  ) {
+    camera.position.y =
+      groundY;
 
-  isGrounded =
-    true;
-}
+    verticalVelocity =
+      0;
+
+    isGrounded = true;
   }
 
   networkTimer +=
@@ -2315,6 +2263,7 @@ if (
     );
   }
 }
+
 
 /* ======================================================
    SHOOT
@@ -2435,6 +2384,7 @@ window.addEventListener(
   }
 );
 
+
 /* ======================================================
    SHOP
 ====================================================== */
@@ -2497,8 +2447,7 @@ function renderShop() {
       currentGun ===
       gunId;
 
-    let action =
-      "";
+    let action = "";
 
     if (
       equipped
@@ -2559,8 +2508,7 @@ function renderShop() {
             ${weapon.cooldown}ms
             &nbsp; | &nbsp;
             ${
-              weapon.price ===
-              0
+              weapon.price === 0
                 ? "FREE"
                 : `${weapon.price} COINS`
             }
@@ -2613,7 +2561,7 @@ function renderShop() {
     );
 }
 
-```js
+
 /* ======================================================
    POINTER LOCK / PLAY
 ====================================================== */
@@ -2643,20 +2591,22 @@ playButton.addEventListener(
         );
     }
 
-    playerName = name;
+    playerName =
+      name;
 
     statusText.textContent =
       "Connecting to server...";
 
-    if (socket.connected) {
+    if (
+      socket.connected
+    ) {
       socket.emit(
         "joinGame",
         {
-          username: playerName
+          username:
+            playerName
         }
       );
-
-      controls.lock();
     } else {
       socket.connect();
     }
@@ -2674,11 +2624,15 @@ controls.addEventListener(
 controls.addEventListener(
   "unlock",
   () => {
-    if (health > 0) {
+    if (
+      health > 0
+    ) {
       startOverlay.style.display =
         "flex";
 
-      if (playerJoined) {
+      if (
+        playerJoined
+      ) {
         statusText.textContent =
           "Click PLAY to resume";
       }
@@ -2689,11 +2643,15 @@ controls.addEventListener(
 usernameInput.addEventListener(
   "keydown",
   (event) => {
-    if (event.code === "Enter") {
+    if (
+      event.code ===
+      "Enter"
+    ) {
       playButton.click();
     }
   }
 );
+
 
 /* ======================================================
    SOCKET CONNECTION
@@ -2717,7 +2675,8 @@ socket.on(
       socket.emit(
         "joinGame",
         {
-          username: playerName
+          username:
+            playerName
         }
       );
     }
@@ -2750,14 +2709,8 @@ socket.on(
 
     statusText.textContent =
       "Server waking up...";
-
-    /*
-      Socket.IO will automatically retry
-      because reconnection is enabled above.
-    */
   }
 );
-```
 
 
 /* ======================================================
@@ -2804,6 +2757,10 @@ socket.on(
       data.position.z
     );
 
+    verticalVelocity = 0;
+
+    isGrounded = true;
+
     healthValue.textContent =
       health;
 
@@ -2814,7 +2771,9 @@ socket.on(
       coins;
 
     applyGunVisual();
+
     renderShop();
+
     updatePlayerCount();
 
     statusText.textContent =
@@ -2827,6 +2786,7 @@ socket.on(
   }
 );
 
+
 /* ======================================================
    EXISTING PLAYERS
 ====================================================== */
@@ -2835,12 +2795,19 @@ socket.on(
   "existingPlayers",
   (players) => {
     for (
-      const player of
-      players
+      const player of players
     ) {
       if (
         player.id ===
         localPlayerId
+      ) {
+        continue;
+      }
+
+      if (
+        otherPlayers.has(
+          player.id
+        )
       ) {
         continue;
       }
@@ -2878,6 +2845,7 @@ socket.on(
     updatePlayerCount();
   }
 );
+
 
 /* ======================================================
    PLAYER JOINED
@@ -2918,6 +2886,7 @@ socket.on(
   }
 );
 
+
 /* ======================================================
    PLAYER MOVED
 ====================================================== */
@@ -2952,6 +2921,7 @@ socket.on(
   }
 );
 
+
 /* ======================================================
    PLAYER LEFT
 ====================================================== */
@@ -2980,6 +2950,7 @@ socket.on(
   }
 );
 
+
 /* ======================================================
    PLAYER COUNT
 ====================================================== */
@@ -2991,6 +2962,7 @@ socket.on(
       count;
   }
 );
+
 
 /* ======================================================
    REMOTE SHOTS
@@ -3012,15 +2984,18 @@ socket.on(
         data.origin.y,
         data.origin.z
       ),
+
       new THREE.Vector3(
         data.direction.x,
         data.direction.y,
         data.direction.z
       ),
+
       data.id
     );
   }
 );
+
 
 /* ======================================================
    PLAYER HIT
@@ -3086,6 +3061,7 @@ socket.on(
   }
 );
 
+
 /* ======================================================
    SCORE
 ====================================================== */
@@ -3109,6 +3085,7 @@ socket.on(
       score;
   }
 );
+
 
 /* ======================================================
    CURRENCY
@@ -3138,6 +3115,7 @@ socket.on(
     renderShop();
   }
 );
+
 
 /* ======================================================
    GUN INVENTORY
@@ -3210,6 +3188,7 @@ socket.on(
   }
 );
 
+
 /* ======================================================
    ELIMINATION
 ====================================================== */
@@ -3238,6 +3217,7 @@ socket.on(
   }
 );
 
+
 /* ======================================================
    RESPAWN
 ====================================================== */
@@ -3259,6 +3239,10 @@ socket.on(
       data.position.z
     );
 
+    verticalVelocity = 0;
+
+    isGrounded = true;
+
     playerJoined =
       true;
 
@@ -3268,6 +3252,7 @@ socket.on(
     controls.lock();
   }
 );
+
 
 /* ======================================================
    REMOTE PLAYERS
@@ -3312,6 +3297,7 @@ function updateRemotePlayers(
   }
 }
 
+
 /* ======================================================
    PROJECTILES
 ====================================================== */
@@ -3345,13 +3331,11 @@ function updateProjectiles(
       Math.abs(
         projectile.mesh.position.x
       ) >
-        arenaSize / 2 +
-        20 ||
+        arenaSize / 2 + 20 ||
       Math.abs(
         projectile.mesh.position.z
       ) >
-        arenaSize / 2 +
-        20
+        arenaSize / 2 + 20
     ) {
       scene.remove(
         projectile.mesh
@@ -3364,6 +3348,7 @@ function updateProjectiles(
     }
   }
 }
+
 
 /* ======================================================
    GUN ANIMATION
@@ -3400,6 +3385,7 @@ function updateGun() {
   }
 }
 
+
 /* ======================================================
    PLAYER COUNT
 ====================================================== */
@@ -3408,11 +3394,14 @@ function updatePlayerCount() {
   playerCountValue.textContent =
     String(
       otherPlayers.size +
-      (playerJoined
-        ? 1
-        : 0)
+      (
+        playerJoined
+          ? 1
+          : 0
+      )
     );
 }
+
 
 /* ======================================================
    RESIZE
@@ -3434,11 +3423,13 @@ window.addEventListener(
   }
 );
 
+
 /* ======================================================
    START
 ====================================================== */
 
 usernameInput.focus();
+
 
 /* ======================================================
    GAME LOOP
