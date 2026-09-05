@@ -684,7 +684,7 @@ createBuilding(
    CENTRAL STRUCTURE
 ====================================================== */
 
-createMapBox(
+addBox(
   0,
   3.5,
   -17,
@@ -694,7 +694,7 @@ createMapBox(
   concreteMaterial
 );
 
-createMapBox(
+addBox(
   -14,
   3.5,
   -8,
@@ -704,7 +704,7 @@ createMapBox(
   concreteMaterial
 );
 
-createMapBox(
+addBox(
   14,
   3.5,
   -8,
@@ -719,7 +719,7 @@ createMapBox(
    LONG COVER WALLS
 ====================================================== */
 
-createMapBox(
+addBox(
   -30,
   1.5,
   2,
@@ -729,7 +729,7 @@ createMapBox(
   concreteMaterial
 );
 
-createMapBox(
+addBox(
   30,
   1.5,
   2,
@@ -739,7 +739,7 @@ createMapBox(
   concreteMaterial
 );
 
-createMapBox(
+addBox(
   -7,
   1.5,
   12,
@@ -749,7 +749,7 @@ createMapBox(
   concreteMaterial
 );
 
-createMapBox(
+addBox(
   7,
   1.5,
   12,
@@ -812,7 +812,7 @@ function createCrate(
 ) {
   const size = 2.8;
 
-  return createMapBox(
+  return addBox(
     x,
     (size * scaleY) / 2,
     z,
