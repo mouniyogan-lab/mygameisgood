@@ -160,7 +160,6 @@ let lastLookX = 0;
 let lastLookY = 0;
 
 const mobileLookSensitivity = 0.004;
-
 const damageFlash =
   document.getElementById(
     "damageFlash"
