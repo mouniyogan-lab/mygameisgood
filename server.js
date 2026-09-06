@@ -3,6 +3,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 
 const app = express();
+
 const server = http.createServer(app);
 
 const io = new Server(server, {
@@ -12,556 +13,525 @@ const io = new Server(server, {
   }
 });
 
-app.use(express.static(__dirname));
+app.use(express.json());
+
+/* ======================================================
+   SERVER
+====================================================== */
 
 const PORT = process.env.PORT || 3000;
 
+app.get("/", (req, res) => {
+  res.send("Neon Strike server is online!");
+});
+
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    players: players.size
+  });
+});
+
+
+/* ======================================================
+   PLAYERS
+====================================================== */
+
 const players = new Map();
 
+
+/* ======================================================
+   GUNS
+====================================================== */
+
 const GUNS = {
+
   pistol: {
+    name: "Pistol",
     price: 0,
     damage: 25,
     cooldown: 115
   },
 
   smg: {
+    name: "SMG",
     price: 20,
     damage: 15,
     cooldown: 75
   },
 
   shotgun: {
+    name: "Shotgun",
     price: 40,
     damage: 55,
     cooldown: 550
   },
 
   rifle: {
+    name: "Assault Rifle",
     price: 60,
     damage: 35,
     cooldown: 180
   },
 
   railgun: {
+    name: "Railgun",
     price: 100,
     damage: 80,
     cooldown: 850
   }
+
 };
 
 
-const spawnPoints = [
-  { x: 0, y: 2.1, z: 25 },
-  { x: -36, y: 2.1, z: 25 },
-  { x: 36, y: 2.1, z: 25 },
-  { x: -38, y: 2.1, z: 0 },
-  { x: 38, y: 2.1, z: 0 },
-  { x: -36, y: 2.1, z: -38 },
-  { x: 36, y: 2.1, z: -38 },
-  { x: 0, y: 2.1, z: -42 }
+/* ======================================================
+   SPAWN POINTS
+====================================================== */
+
+const SPAWN_POINTS = [
+
+  { x: 0, z: 25 },
+
+  { x: 0, z: -25 },
+
+  { x: 25, z: 0 },
+
+  { x: -25, z: 0 },
+
+  { x: 35, z: 35 },
+
+  { x: -35, z: 35 },
+
+  { x: 35, z: -35 },
+
+  { x: -35, z: -35 }
+
 ];
 
 
 function getSpawnPoint() {
-  return {
-    ...spawnPoints[
-      Math.floor(
-        Math.random() * spawnPoints.length
-      )
-    ]
-  };
+
+  return SPAWN_POINTS[
+    Math.floor(
+      Math.random() *
+      SPAWN_POINTS.length
+    )
+  ];
+
 }
 
 
-function cleanName(name) {
-  if (typeof name !== "string") {
-    return "Player";
+/* ======================================================
+   SAFE NUMBER
+====================================================== */
+
+function safeNumber(value, fallback = 0) {
+
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return fallback;
   }
 
-  const cleaned = name
-    .replace(/[^\w\- ]/g, "")
-    .trim()
-    .slice(0, 16);
+  return number;
 
-  return cleaned || "Player";
 }
 
 
-function getPublicPlayer(player) {
-  return {
-    id: player.id,
+/* ======================================================
+   DISTANCE FROM RAY TO POINT
+====================================================== */
 
-    username: player.username,
-
-    position: {
-      x: player.position.x,
-      y: player.position.y,
-      z: player.position.z
-    },
-
-    rotation: {
-      x: player.rotation.x,
-      y: player.rotation.y,
-      z: player.rotation.z
-    },
-
-    health: player.health,
-    score: player.score,
-    coins: player.coins,
-    currentGun: player.currentGun
-  };
-}
-
-
-/*
-====================================================
-RAY / PLAYER HIT DETECTION
-====================================================
-*/
-
-/*
-  Finds the closest point on a ray to a point.
-
-  rayOrigin = bullet starting position
-  rayDirection = normalized shooting direction
-  point = target position
-*/
 function distanceFromRayToPoint(
   rayOrigin,
   rayDirection,
   point
 ) {
+
   const toPoint = {
-    x: point.x - rayOrigin.x,
-    y: point.y - rayOrigin.y,
-    z: point.z - rayOrigin.z
+
+    x:
+      point.x -
+      rayOrigin.x,
+
+    y:
+      point.y -
+      rayOrigin.y,
+
+    z:
+      point.z -
+      rayOrigin.z
+
   };
 
+
   const projection =
-    toPoint.x * rayDirection.x +
-    toPoint.y * rayDirection.y +
-    toPoint.z * rayDirection.z;
+
+    toPoint.x *
+      rayDirection.x +
+
+    toPoint.y *
+      rayDirection.y +
+
+    toPoint.z *
+      rayDirection.z;
+
 
   if (projection < 0) {
+
     return {
       distance: Infinity,
       projection
     };
+
   }
 
+
   const closestPoint = {
+
     x:
       rayOrigin.x +
-      rayDirection.x * projection,
+      rayDirection.x *
+        projection,
 
     y:
       rayOrigin.y +
-      rayDirection.y * projection,
+      rayDirection.y *
+        projection,
 
     z:
       rayOrigin.z +
-      rayDirection.z * projection
+      rayDirection.z *
+        projection
+
   };
 
+
   const dx =
-    closestPoint.x - point.x;
+    closestPoint.x -
+    point.x;
 
   const dy =
-    closestPoint.y - point.y;
+    closestPoint.y -
+    point.y;
 
   const dz =
-    closestPoint.z - point.z;
+    closestPoint.z -
+    point.z;
 
-  return {
-    distance: Math.sqrt(
+
+  const distance =
+    Math.sqrt(
       dx * dx +
       dy * dy +
       dz * dz
-    ),
+    );
 
+
+  return {
+    distance,
     projection
   };
+
 }
 
 
-/*
-====================================================
-SOCKET CONNECTION
-====================================================
-*/
+/* ======================================================
+   SOCKET CONNECTION
+====================================================== */
 
 io.on("connection", (socket) => {
 
   console.log(
-    "Player connected:",
+    "PLAYER CONNECTED:",
     socket.id
   );
 
 
-  /*
-  ==================================================
-  JOIN GAME
-  ==================================================
-  */
-
-  socket.on("joinGame", (data) => {
-
-    if (players.has(socket.id)) {
-      return;
-    }
-
-    const spawn = getSpawnPoint();
-
-    const player = {
-
-      id: socket.id,
-
-      username: cleanName(
-        data?.username
-      ),
-
-      position: {
-        x: spawn.x,
-        y: spawn.y,
-        z: spawn.z
-      },
-
-      rotation: {
-        x: 0,
-        y: 0,
-        z: 0
-      },
-
-      health: 100,
-
-      score: 0,
-
-      coins: 0,
-
-      ownedGuns: {
-        pistol: true
-      },
-
-      currentGun: "pistol",
-
-      lastShot: 0
-    };
-
-
-    players.set(
-      socket.id,
-      player
-    );
-
-
-    const existingPlayers = [];
-
-
-    for (
-      const other of players.values()
-    ) {
-
-      if (
-        other.id !== player.id
-      ) {
-
-        existingPlayers.push(
-          getPublicPlayer(other)
-        );
-
-      }
-
-    }
-
-
-    socket.emit(
-      "existingPlayers",
-      existingPlayers
-    );
-
-
-    socket.emit(
-      "joinAccepted",
-      {
-
-        id: player.id,
-
-        username: player.username,
-
-        position: player.position,
-
-        health: player.health,
-
-        score: player.score,
-
-        coins: player.coins,
-
-        ownedGuns: player.ownedGuns,
-
-        currentGun: player.currentGun
-
-      }
-    );
-
-
-    socket.broadcast.emit(
-      "playerJoined",
-      getPublicPlayer(player)
-    );
-
-
-    io.emit(
-      "playerCount",
-      players.size
-    );
-
-
-    console.log(
-      `${player.username} joined`
-    );
-
-  });
-
-
-  /*
-  ==================================================
-  PLAYER MOVEMENT
-  ==================================================
-  */
+  /* ====================================================
+     JOIN GAME
+  ==================================================== */
 
   socket.on(
-    "playerMove",
+    "joinGame",
     (data) => {
 
-      const player =
-        players.get(socket.id);
+      const username =
+        String(
+          data?.username ||
+          "Player"
+        )
+        .replace(
+          /[^\w\- ]/g,
+          ""
+        )
+        .slice(
+          0,
+          16
+        ) ||
+        "Player";
 
 
-      if (
-        !player ||
-        !data ||
-        !data.position ||
-        !data.rotation
+      const spawn =
+        getSpawnPoint();
+
+
+      const player = {
+
+        id:
+          socket.id,
+
+        username,
+
+        health:
+          100,
+
+        score:
+          0,
+
+        coins:
+          0,
+
+        ownedGuns: {
+          pistol: true
+        },
+
+        currentGun:
+          "pistol",
+
+        position: {
+
+          x:
+            spawn.x,
+
+          y:
+            2.1,
+
+          z:
+            spawn.z
+
+        },
+
+        rotation: {
+
+          x:
+            0,
+
+          y:
+            0,
+
+          z:
+            0
+
+        },
+
+        lastShot:
+          0
+
+      };
+
+
+      players.set(
+        socket.id,
+        player
+      );
+
+
+      /* Send existing players to new player */
+
+      const existingPlayers =
+        [];
+
+
+      for (
+        const other of
+        players.values()
       ) {
-        return;
+
+        if (
+          other.id ===
+          socket.id
+        ) {
+
+          continue;
+
+        }
+
+
+        existingPlayers.push({
+
+          id:
+            other.id,
+
+          username:
+            other.username,
+
+          position:
+            other.position,
+
+          rotation:
+            other.rotation
+
+        });
+
       }
 
 
-      const x =
-        Number(data.position.x);
+      socket.emit(
+        "joinAccepted",
+        {
 
-      const z =
-        Number(data.position.z);
+          id:
+            player.id,
 
-      const rx =
-        Number(data.rotation.x);
+          health:
+            player.health,
 
-      const ry =
-        Number(data.rotation.y);
+          score:
+            player.score,
 
+          coins:
+            player.coins,
 
-      if (
-        !Number.isFinite(x) ||
-        !Number.isFinite(z) ||
-        !Number.isFinite(rx) ||
-        !Number.isFinite(ry)
-      ) {
-        return;
-      }
+          ownedGuns:
+            player.ownedGuns,
 
+          currentGun:
+            player.currentGun,
 
-      const dx =
-        x - player.position.x;
+          position:
+            player.position
 
-      const dz =
-        z - player.position.z;
-
-
-      const distance =
-        Math.sqrt(
-          dx * dx +
-          dz * dz
-        );
+        }
+      );
 
 
-      /*
-        Prevent impossible teleports.
-      */
-      if (distance > 3) {
-        return;
-      }
+      socket.emit(
+        "existingPlayers",
+        existingPlayers
+      );
 
 
-      player.position.x = x;
-
-      player.position.y = 2.1;
-
-      player.position.z = z;
-
-
-      player.rotation.x = rx;
-
-      player.rotation.y = ry;
-
-      player.rotation.z = 0;
-
+      /* Tell everyone else */
 
       socket.broadcast.emit(
-        "playerMoved",
+        "playerJoined",
         {
-          id: player.id,
 
-          position: player.position,
+          id:
+            player.id,
 
-          rotation: player.rotation
+          username:
+            player.username,
+
+          position:
+            player.position,
+
+          rotation:
+            player.rotation
+
         }
+      );
+
+
+      io.emit(
+        "playerCount",
+        players.size
+      );
+
+
+      console.log(
+        `${username} joined the game`
       );
 
     }
   );
 
 
-  /*
-  ==================================================
-  SHOOTING + HIT DETECTION
-  ==================================================
-  */
+  /* ====================================================
+     PLAYER MOVEMENT
+  ==================================================== */
 
   socket.on(
-    "shoot",
+    "playerMove",
     (data) => {
 
       const player =
-        players.get(socket.id);
+        players.get(
+          socket.id
+        );
+
+
+      if (!player) {
+        return;
+      }
 
 
       if (
-        !player ||
-        !data
+        !data ||
+        !data.position ||
+        !data.rotation
       ) {
+
         return;
+
       }
 
 
-      /*
-      ----------------------------------------------
-      GET GUN
-      ----------------------------------------------
-      */
+      const newX =
+        safeNumber(
+          data.position.x,
+          player.position.x
+        );
 
-      const gunId =
-        typeof data.gunId === "string"
-          ? data.gunId
-          : "pistol";
+      const newY =
+        safeNumber(
+          data.position.y,
+          player.position.y
+        );
 
-
-      const gun =
-        GUNS[gunId];
-
-
-      if (!gun) {
-        return;
-      }
+      const newZ =
+        safeNumber(
+          data.position.z,
+          player.position.z
+        );
 
 
-      /*
-      Make sure the player actually owns
-      the gun they're trying to use.
-      */
+      const newRotX =
+        safeNumber(
+          data.rotation.x,
+          player.rotation.x
+        );
 
-      if (
-        !player.ownedGuns[gunId]
-      ) {
-        return;
-      }
+      const newRotY =
+        safeNumber(
+          data.rotation.y,
+          player.rotation.y
+        );
 
-
-      /*
-      Make sure this is their equipped gun.
-      */
-
-      if (
-        player.currentGun !== gunId
-      ) {
-        return;
-      }
+      const newRotZ =
+        safeNumber(
+          data.rotation.z,
+          player.rotation.z
+        );
 
 
-      /*
-      ----------------------------------------------
-      FIRE RATE CHECK
-      ----------------------------------------------
-      */
-
-      const now = Date.now();
-
-
-      if (
-        now - player.lastShot <
-        gun.cooldown
-      ) {
-        return;
-      }
-
-
-      player.lastShot = now;
-
-
-      /*
-      ----------------------------------------------
-      CHECK SHOT DATA
-      ----------------------------------------------
-      */
-
-      if (
-        !data.origin ||
-        !data.direction
-      ) {
-        return;
-      }
-
-
-      const origin = {
-
-        x: Number(data.origin.x),
-
-        y: Number(data.origin.y),
-
-        z: Number(data.origin.z)
-
-      };
-
+      /* Prevent huge teleporting */
 
       const dx =
-        Number(data.direction.x);
+        newX -
+        player.position.x;
 
       const dy =
-        Number(data.direction.y);
+        newY -
+        player.position.y;
 
       const dz =
-        Number(data.direction.z);
+        newZ -
+        player.position.z;
 
 
-      if (
-        !Number.isFinite(origin.x) ||
-        !Number.isFinite(origin.y) ||
-        !Number.isFinite(origin.z) ||
-        !Number.isFinite(dx) ||
-        !Number.isFinite(dy) ||
-        !Number.isFinite(dz)
-      ) {
-        return;
-      }
-
-
-      /*
-      ----------------------------------------------
-      NORMALIZE DIRECTION
-      ----------------------------------------------
-      */
-
-      const length =
+      const distance =
         Math.sqrt(
           dx * dx +
           dy * dy +
@@ -570,106 +540,320 @@ io.on("connection", (socket) => {
 
 
       if (
-        length < 0.0001
+        distance > 3
       ) {
+
         return;
+
       }
 
 
-      const direction = {
+      player.position = {
 
-        x: dx / length,
+        x:
+          newX,
 
-        y: dy / length,
+        y:
+          newY,
 
-        z: dz / length
+        z:
+          newZ
 
       };
 
 
-      /*
-      ----------------------------------------------
-      SHOW BULLET TO EVERY PLAYER
-      ----------------------------------------------
-      */
+      player.rotation = {
+
+        x:
+          newRotX,
+
+        y:
+          newRotY,
+
+        z:
+          newRotZ
+
+      };
+
+
+      socket.broadcast.emit(
+        "playerMoved",
+        {
+
+          id:
+            socket.id,
+
+          position:
+            player.position,
+
+          rotation:
+            player.rotation
+
+        }
+      );
+
+    }
+  );
+
+
+  /* ====================================================
+     SHOOT
+  ==================================================== */
+
+  socket.on(
+    "shoot",
+    (data) => {
+
+      const player =
+        players.get(
+          socket.id
+        );
+
+
+      if (!player) {
+
+        console.log(
+          "SHOT REJECTED: player not found"
+        );
+
+        return;
+
+      }
+
+
+      /* -----------------------------------------------
+         GET GUN
+      ------------------------------------------------ */
+
+      const gunId =
+        data?.gunId ||
+        player.currentGun ||
+        "pistol";
+
+
+      const gun =
+        GUNS[gunId];
+
+
+      if (!gun) {
+
+        console.log(
+          "SHOT REJECTED: invalid gun",
+          gunId
+        );
+
+        return;
+
+      }
+
+
+      /* -----------------------------------------------
+         SERVER-SIDE FIRE RATE
+      ------------------------------------------------ */
+
+      const now =
+        Date.now();
+
+
+      if (
+        now -
+          player.lastShot <
+        gun.cooldown
+      ) {
+
+        return;
+
+      }
+
+
+      player.lastShot =
+        now;
+
+
+      /* -----------------------------------------------
+         SHOT ORIGIN
+      ------------------------------------------------ */
+
+      if (
+        !data ||
+        !data.origin ||
+        !data.direction
+      ) {
+
+        console.log(
+          "SHOT REJECTED: missing origin/direction"
+        );
+
+        return;
+
+      }
+
+
+      const origin = {
+
+        x:
+          safeNumber(
+            data.origin.x
+          ),
+
+        y:
+          safeNumber(
+            data.origin.y
+          ),
+
+        z:
+          safeNumber(
+            data.origin.z
+          )
+
+      };
+
+
+      /* -----------------------------------------------
+         SHOT DIRECTION
+      ------------------------------------------------ */
+
+      const direction = {
+
+        x:
+          safeNumber(
+            data.direction.x
+          ),
+
+        y:
+          safeNumber(
+            data.direction.y
+          ),
+
+        z:
+          safeNumber(
+            data.direction.z
+          )
+
+      };
+
+
+      /* Normalize direction */
+
+      const length =
+        Math.sqrt(
+
+          direction.x *
+            direction.x +
+
+          direction.y *
+            direction.y +
+
+          direction.z *
+            direction.z
+
+        );
+
+
+      if (
+        length <= 0.0001
+      ) {
+
+        console.log(
+          "SHOT REJECTED: zero direction"
+        );
+
+        return;
+
+      }
+
+
+      direction.x /=
+        length;
+
+      direction.y /=
+        length;
+
+      direction.z /=
+        length;
+
+
+      /* -----------------------------------------------
+         BROADCAST SHOT VISUAL
+      ------------------------------------------------ */
 
       io.emit(
         "playerShot",
         {
 
-          id: player.id,
+          id:
+            socket.id,
 
           origin,
 
-          direction,
-
-          gunId
+          direction
 
         }
       );
 
 
-      /*
-      ----------------------------------------------
-      FIND CLOSEST TARGET
-      ----------------------------------------------
-      */
+      console.log(
+        `${player.username} fired ${gun.name}`
+      );
 
-      let closestPlayer = null;
 
-      let closestDistance = Infinity;
+      /* -----------------------------------------------
+         FIND TARGET
+      ------------------------------------------------ */
+
+      let closestPlayer =
+        null;
+
+      let closestDistance =
+        Infinity;
 
 
       for (
-        const target of players.values()
+        const [
+          targetId,
+          target
+        ] of players.entries()
       ) {
 
-        /*
-        Don't shoot yourself.
-        */
+        /* Never hit yourself */
 
         if (
-          target.id === player.id
+          targetId ===
+          socket.id
         ) {
+
           continue;
+
         }
 
 
-        /*
-        --------------------------------------------
-        PLAYER HITBOX
-        --------------------------------------------
+        /* ---------------------------------------------
+           ENEMY HITBOX
 
-        The old code used:
+           The client's enemy group is at Y = 0.
 
-          y + 1.1
+           Body:
+             center Y ≈ 1.15
 
-        which put the hit point too high.
+           Head:
+             center Y ≈ 2.08
 
-        We now use a much larger center point
-        covering the player's body/head.
-        */
+           We therefore use a large capsule-like
+           spherical hit area centered around Y = 1.35.
+        --------------------------------------------- */
 
         const hitboxCenter = {
 
-          x: target.position.x,
+          x:
+            target.position.x,
 
-          y: target.position.y + 1.35,
+          y:
+            1.35,
 
-          z: target.position.z
+          z:
+            target.position.z
 
         };
-
-
-        /*
-        Radius of player's hitbox.
-
-        1.15 makes normal FPS aiming much
-        more forgiving and actually matches
-        the visible player model.
-        */
-
-        const hitboxRadius = 1.15;
 
 
         const result =
@@ -680,32 +864,37 @@ io.on("connection", (socket) => {
           );
 
 
-        /*
-        Ignore targets behind us.
-        */
+        /* Target must be in front */
 
         if (
           result.projection < 0
         ) {
+
           continue;
+
         }
 
 
-        /*
-        Maximum shooting distance.
-        */
+        /* Maximum shooting distance */
 
         if (
           result.projection > 150
         ) {
+
           continue;
+
         }
 
 
         /*
-        Check whether the bullet ray
-        intersects the player's hitbox.
+          Large enough to hit the body/head,
+          but still requires the shot to be
+          reasonably close to the player.
         */
+
+        const hitboxRadius =
+          1.45;
+
 
         if (
           result.distance <=
@@ -720,8 +909,15 @@ io.on("connection", (socket) => {
             closestDistance =
               result.projection;
 
-            closestPlayer =
-              target;
+            closestPlayer = {
+
+              id:
+                targetId,
+
+              player:
+                target
+
+            };
 
           }
 
@@ -730,43 +926,48 @@ io.on("connection", (socket) => {
       }
 
 
-      /*
-      ----------------------------------------------
-      NO HIT
-      ----------------------------------------------
-      */
+      /* -----------------------------------------------
+         MISS
+      ------------------------------------------------ */
 
       if (
         !closestPlayer
       ) {
+
+        console.log(
+          `${player.username} MISSED`
+        );
+
         return;
+
       }
 
 
-      /*
-      ----------------------------------------------
-      APPLY DAMAGE
-      ----------------------------------------------
-      */
+      /* -----------------------------------------------
+         APPLY DAMAGE
+      ------------------------------------------------ */
 
-      closestPlayer.health =
+      const target =
+        closestPlayer.player;
+
+
+      target.health =
         Math.max(
           0,
-          closestPlayer.health -
+          target.health -
             gun.damage
         );
 
 
       console.log(
-        `${player.username} hit ${closestPlayer.username} for ${gun.damage} damage`
+        `${player.username} HIT ${target.username} for ${gun.damage} damage | HP: ${target.health}`
       );
 
 
-      /*
-      ----------------------------------------------
-      SEND HIT TO TARGET
-      ----------------------------------------------
-      */
+      /* -----------------------------------------------
+         SEND DAMAGE TO VICTIM
+      ------------------------------------------------ */
+console.log("SENDING PLAYER HIT TO:", closestPlayer.id);
 
       io.to(
         closestPlayer.id
@@ -778,134 +979,145 @@ io.on("connection", (socket) => {
             closestPlayer.id,
 
           attackerId:
-            player.id,
+            socket.id,
 
           attackerName:
             player.username,
-
-          health:
-            closestPlayer.health,
 
           damage:
-            gun.damage
+            gun.damage,
+
+          health:
+            target.health
 
         }
       );
 
 
-      /*
-      ----------------------------------------------
-      PLAYER SURVIVED
-      ----------------------------------------------
-      */
+      /* -----------------------------------------------
+         ELIMINATION
+      ------------------------------------------------ */
 
       if (
-        closestPlayer.health > 0
+        target.health <= 0
       ) {
-        return;
-      }
+
+        console.log(
+          `${target.username} was eliminated by ${player.username}`
+        );
 
 
-      /*
-      ----------------------------------------------
-      ELIMINATION
-      ----------------------------------------------
-      */
+        /* Give attacker score */
 
-      player.score += 100;
-
-      player.coins += 10;
+        player.score +=
+          1;
 
 
-      socket.emit(
-        "scoreUpdate",
-        {
+        /* Give attacker coins */
 
-          id: player.id,
-
-          score: player.score
-
-        }
-      );
+        player.coins +=
+          10;
 
 
-      socket.emit(
-        "currencyUpdate",
-        {
+        /* Tell everyone */
 
-          id: player.id,
+        io.emit(
+          "playerEliminated",
+          {
 
-          coins: player.coins
+            attackerId:
+              socket.id,
 
-        }
-      );
+            targetId:
+              closestPlayer.id,
 
+            attackerName:
+              player.username,
 
-      io.emit(
-        "playerEliminated",
-        {
+            targetName:
+              target.username
 
-          targetId:
-            closestPlayer.id,
-
-          attackerId:
-            player.id,
-
-          attackerName:
-            player.username,
-
-          reward: 10
-
-        }
-      );
+          }
+        );
 
 
-      /*
-      ----------------------------------------------
-      RESPAWN AFTER 1.5 SECONDS
-      ----------------------------------------------
-      */
+        /* Update attacker score */
 
-      setTimeout(() => {
+        io.to(
+          socket.id
+        ).emit(
+          "scoreUpdate",
+          {
 
-        if (
-          !players.has(
-            closestPlayer.id
-          )
-        ) {
-          return;
-        }
+            id:
+              socket.id,
+
+            score:
+              player.score
+
+          }
+        );
 
 
-        const newSpawn =
+        /* Update attacker coins */
+
+        io.to(
+          socket.id
+        ).emit(
+          "currencyUpdate",
+          {
+
+            id:
+              socket.id,
+
+            coins:
+              player.coins
+
+          }
+        );
+
+
+        /* ---------------------------------------------
+           RESPAWN
+        --------------------------------------------- */
+
+        const spawn =
           getSpawnPoint();
 
 
-        closestPlayer.health =
+        target.health =
           100;
 
 
-        closestPlayer.position = {
+        target.position = {
 
-          x: newSpawn.x,
+          x:
+            spawn.x,
 
-          y: newSpawn.y,
+          y:
+            2.1,
 
-          z: newSpawn.z
+          z:
+            spawn.z
+
+        };
+
+
+        target.rotation = {
+
+          x:
+            0,
+
+          y:
+            0,
+
+          z:
+            0
 
         };
 
 
-        closestPlayer.rotation = {
-
-          x: 0,
-
-          y: 0,
-
-          z: 0
-
-        };
-
+        /* Tell victim */
 
         io.to(
           closestPlayer.id
@@ -913,39 +1125,55 @@ io.on("connection", (socket) => {
           "respawn",
           {
 
-            health: 100,
+            health:
+              100,
 
             position:
-              closestPlayer.position
+              target.position
 
           }
         );
 
 
-      }, 1500);
+        /* Tell everyone about new position */
+
+        io.emit(
+          "playerMoved",
+          {
+
+            id:
+              closestPlayer.id,
+
+            position:
+              target.position,
+
+            rotation:
+              target.rotation
+
+          }
+        );
+
+      }
 
     }
   );
 
 
-  /*
-  ==================================================
-  BUY GUN
-  ==================================================
-  */
+  /* ====================================================
+     BUY GUN
+  ==================================================== */
 
   socket.on(
     "buyGun",
     (gunId) => {
 
       const player =
-        players.get(socket.id);
+        players.get(
+          socket.id
+        );
 
 
-      if (
-        !player ||
-        typeof gunId !== "string"
-      ) {
+      if (!player) {
         return;
       }
 
@@ -959,21 +1187,18 @@ io.on("connection", (socket) => {
       }
 
 
+      /* Already owned */
+
       if (
         player.ownedGuns[gunId]
       ) {
 
-        socket.emit(
-          "gunPurchaseFailed",
-          {
-            message:
-              "You already own this gun."
-          }
-        );
-
         return;
+
       }
 
+
+      /* Not enough coins */
 
       if (
         player.coins <
@@ -984,13 +1209,16 @@ io.on("connection", (socket) => {
           "gunPurchaseFailed",
           {
             message:
-              "Not enough coins."
+              "Not enough coins"
           }
         );
 
         return;
+
       }
 
+
+      /* Buy */
 
       player.coins -=
         gun.price;
@@ -1020,28 +1248,44 @@ io.on("connection", (socket) => {
         }
       );
 
+
+      socket.emit(
+        "currencyUpdate",
+        {
+
+          id:
+            socket.id,
+
+          coins:
+            player.coins
+
+        }
+      );
+
+
+      console.log(
+        `${player.username} bought ${gun.name}`
+      );
+
     }
   );
 
 
-  /*
-  ==================================================
-  EQUIP GUN
-  ==================================================
-  */
+  /* ====================================================
+     EQUIP GUN
+  ==================================================== */
 
   socket.on(
     "equipGun",
     (gunId) => {
 
       const player =
-        players.get(socket.id);
+        players.get(
+          socket.id
+        );
 
 
-      if (
-        !player ||
-        typeof gunId !== "string"
-      ) {
+      if (!player) {
         return;
       }
 
@@ -1049,14 +1293,18 @@ io.on("connection", (socket) => {
       if (
         !GUNS[gunId]
       ) {
+
         return;
+
       }
 
 
       if (
         !player.ownedGuns[gunId]
       ) {
+
         return;
+
       }
 
 
@@ -1077,28 +1325,39 @@ io.on("connection", (socket) => {
         }
       );
 
+
+      console.log(
+        `${player.username} equipped ${gunId}`
+      );
+
     }
   );
 
 
-  /*
-  ==================================================
-  DISCONNECT
-  ==================================================
-  */
+  /* ====================================================
+     DISCONNECT
+  ==================================================== */
 
   socket.on(
     "disconnect",
-    () => {
+    (reason) => {
 
       const player =
-        players.get(socket.id);
+        players.get(
+          socket.id
+        );
 
 
       if (player) {
 
         console.log(
-          `${player.username} left`
+          `${player.username} disconnected: ${reason}`
+        );
+
+      } else {
+
+        console.log(
+          `Player disconnected: ${socket.id}`
         );
 
       }
@@ -1109,7 +1368,7 @@ io.on("connection", (socket) => {
       );
 
 
-      socket.broadcast.emit(
+      io.emit(
         "playerLeft",
         socket.id
       );
@@ -1126,49 +1385,9 @@ io.on("connection", (socket) => {
 });
 
 
-/*
-====================================================
-SERVER ROUTES
-====================================================
-*/
-
-app.get(
-  "/",
-  (req, res) => {
-
-    res.send(
-      "Game server is running!"
-    );
-
-  }
-);
-
-
-app.get(
-  "/health",
-  (req, res) => {
-
-    res.json({
-
-      status: "online",
-
-      players:
-        players.size,
-
-      uptime:
-        process.uptime()
-
-    });
-
-  }
-);
-
-
-/*
-====================================================
-START SERVER
-====================================================
-*/
+/* ======================================================
+   START SERVER
+====================================================== */
 
 server.listen(
   PORT,
@@ -1176,7 +1395,7 @@ server.listen(
   () => {
 
     console.log(
-      `Server running at http://localhost:${PORT}`
+      `Neon Strike server running on port ${PORT}`
     );
 
   }
