@@ -3043,79 +3043,71 @@ usernameInput.addEventListener(
 );
 
 
+```js
 /* ======================================================
    SOCKET CONNECTION
 ====================================================== */
 
-socket.on(
-  "connect",
-  () => {
+socket.on("connect", () => {
 
-    console.log(
-      "CONNECTED TO SERVER:",
-      socket.id
-    );
+  console.log("CONNECTED TO SERVER:", socket.id);
 
+  statusText.textContent = "Connected";
 
-    statusText.textContent =
-      "Connected";
+  // Reset connection state for the new socket
+  localPlayerId = socket.id;
+  playerJoined = false;
 
+  // Automatically join again if we already have a username
+  if (playerName && playerName.trim() !== "") {
 
-    if (
-      playerName &&
-      !playerJoined
-    ) {
+    console.log("REJOINING GAME AS:", playerName);
 
-      socket.emit(
-        "joinGame",
-        {
-          username:
-            playerName
-        }
-      );
-
-    }
+    socket.emit("joinGame", {
+      username: playerName
+    });
 
   }
-);
+});
 
 
-socket.on(
-  "disconnect",
-  (reason) => {
+socket.on("disconnect", (reason) => {
 
-    console.log(
-      "DISCONNECTED:",
-      reason
-    );
+  console.log("DISCONNECTED:", reason);
 
+  playerJoined = false;
+  localPlayerId = null;
 
-    playerJoined =
-      false;
+  statusText.textContent =
+    "Disconnected - reconnecting...";
 
-
-    statusText.textContent =
-      "Disconnected - reconnecting...";
-
-  }
-);
+});
 
 
-socket.on(
-  "connect_error",
-  (error) => {
+socket.on("connect_error", (error) => {
 
-    console.log(
-      "CONNECTION ERROR:",
-      error.message
-    );
+  console.log("CONNECTION ERROR:", error.message);
+
+  statusText.textContent =
+    "Server waking up...";
+
+});
 
 
-    statusText.textContent =
-      "Server waking up...";
+socket.on("reconnect", (attempt) => {
 
-  }
-);
+  console.log("RECONNECTED AFTER ATTEMPT:", attempt);
+
+});
+
+
+socket.on("reconnect_attempt", (attempt) => {
+
+  console.log("RECONNECT ATTEMPT:", attempt);
+
+});
+```
+
 
 
 /* ======================================================
@@ -3475,84 +3467,53 @@ socket.on(
    PLAYER HIT
 ====================================================== */
 
-socket.on(
-  "playerHit",
-  (data) => {
 
-    if (
-      data.targetId !==
-      localPlayerId
-    ) {
+socket.on("playerHit", (data) => {
 
-      return;
+  console.log("PLAYER HIT EVENT RECEIVED:", data);
 
-    }
+  // Only process damage if THIS player was hit
+  if (data.targetId !== localPlayerId) {
+    return;
+  }
 
+  // Update health
+  health = Math.max(0, Number(data.health));
 
-    health =
-      Math.max(
-        0,
-        Number(
-          data.health
-        )
-      );
+  healthValue.textContent = health;
 
+  // Damage flash
+  damageFlash.style.opacity = "1";
 
-    healthValue.textContent =
-      health;
+  setTimeout(() => {
+    damageFlash.style.opacity = "0";
+  }, 120);
 
+  // Hit marker
+  hitMarker.style.opacity = "1";
 
-    damageFlash.style.opacity =
-      "1";
+  setTimeout(() => {
+    hitMarker.style.opacity = "0";
+  }, 120);
 
+  // Eliminated
+  if (health <= 0) {
 
-    setTimeout(
-      () => {
+    health = 0;
+    healthValue.textContent = "0";
 
-        damageFlash.style.opacity =
-          "0";
+    controls.unlock();
 
-      },
-      100
-    );
+    startOverlay.style.display = "flex";
 
-
-    hitMarker.style.opacity =
-      "1";
-
-
-    setTimeout(
-      () => {
-
-        hitMarker.style.opacity =
-          "0";
-
-      },
-      100
-    );
-
-
-    if (
-      health <= 0
-    ) {
-
-      controls.unlock();
-
-
-      startOverlay.style.display =
-        "flex";
-
-
-      statusText.textContent =
-        `Eliminated by ${
-          data.attackerName ||
-          "enemy"
-        }`;
-
-    }
+    statusText.textContent =
+      `Eliminated by ${data.attackerName || "enemy"}`;
 
   }
-);
+
+});
+
+
 
 
 /* ======================================================
