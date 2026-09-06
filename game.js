@@ -119,47 +119,7 @@ const statusText =
   document.getElementById(
     "statusText"
   );
-/* ======================================================
-   MOBILE CONTROLS
-====================================================== */
 
-const mobileControls =
-  document.getElementById("mobileControls");
-
-const joystickZone =
-  document.getElementById("joystickZone");
-
-const joystickKnob =
-  document.getElementById("joystickKnob");
-
-const lookZone =
-  document.getElementById("lookZone");
-
-const mobileJump =
-  document.getElementById("mobileJump");
-
-const mobileFire =
-  document.getElementById("mobileFire");
-
-const mobileShop =
-  document.getElementById("mobileShop");
-
-const isTouchDevice =
-  window.matchMedia("(pointer: coarse)").matches;
-
-let mobileActive = false;
-
-let joystickActive = false;
-
-let joystickTouchId = null;
-
-let lookTouchId = null;
-
-let lastLookX = 0;
-
-let lastLookY = 0;
-
-const mobileLookSensitivity = 0.004;
 const damageFlash =
   document.getElementById(
     "damageFlash"
