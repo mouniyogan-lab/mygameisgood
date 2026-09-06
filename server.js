@@ -39,6 +39,193 @@ app.get("/health", (req, res) => {
 
 const players = new Map();
 
+/* ======================================================
+   MAP COLLISION BOXES
+====================================================== */
+
+const collisionBoxes = [];
+
+function addCollisionBox(
+  x,
+  y,
+  z,
+  width,
+  height,
+  depth
+) {
+  collisionBoxes.push({
+    minX: x - width / 2,
+    maxX: x + width / 2,
+
+    minY: 0,
+    maxY: height,
+
+    minZ: z - depth / 2,
+    maxZ: z + depth / 2
+  });
+}
+
+/* ======================================================
+   CRATES
+====================================================== */
+
+const crateSize = 2.8;
+
+function addCrateCollision(x, z, scaleY = 1) {
+
+  addCollisionBox(
+    x,
+    0,
+    z,
+    crateSize,
+    crateSize * scaleY,
+    crateSize
+  );
+
+}
+
+
+addCrateCollision(-38, -8);
+addCrateCollision(-35, -8);
+
+addCrateCollision(-38, -5);
+addCrateCollision(-35, -5);
+
+
+addCrateCollision(38, -8);
+addCrateCollision(35, -8);
+
+addCrateCollision(38, -5);
+addCrateCollision(35, -5);
+
+
+addCrateCollision(-10, 35);
+addCrateCollision(-7, 35);
+
+addCrateCollision(10, 35);
+addCrateCollision(7, 35);
+
+/* ======================================================
+   OUTER WALLS
+====================================================== */
+
+const arenaSize = 120;
+
+addCollisionBox(
+  0, 5, -arenaSize / 2,
+  arenaSize, 10, 1.2
+);
+
+addCollisionBox(
+  0, 5, arenaSize / 2,
+  arenaSize, 10, 1.2
+);
+
+addCollisionBox(
+  -arenaSize / 2, 5, 0,
+  1.2, 10, arenaSize
+);
+
+addCollisionBox(
+  arenaSize / 2, 5, 0,
+  1.2, 10, arenaSize
+);
+
+
+/* ======================================================
+   BUILDINGS
+====================================================== */
+
+addCollisionBox(
+  -40, 0, -27,
+  20, 8, 18
+);
+
+addCollisionBox(
+  40, 0, -27,
+  20, 8, 18
+);
+
+addCollisionBox(
+  -43, 0, 30,
+  14, 6, 17
+);
+
+addCollisionBox(
+  43, 0, 30,
+  14, 6, 17
+);
+
+
+/* ======================================================
+   CENTRAL STRUCTURE
+====================================================== */
+
+addCollisionBox(
+  0, 0, -17,
+  28, 7, 3
+);
+
+addCollisionBox(
+  -14, 0, -8,
+  3, 7, 18
+);
+
+addCollisionBox(
+  14, 0, -8,
+  3, 7, 18
+);
+
+
+/* ======================================================
+   LONG COVER WALLS
+====================================================== */
+
+addCollisionBox(
+  -30, 0, 2,
+  14, 3, 2
+);
+
+addCollisionBox(
+  30, 0, 2,
+  14, 3, 2
+);
+
+addCollisionBox(
+  -7, 0, 12,
+  12, 3, 2
+);
+
+addCollisionBox(
+  7, 0, 12,
+  12, 3, 2
+);
+
+
+/* ======================================================
+   SMALL CONCRETE BLOCKS
+====================================================== */
+
+addCollisionBox(
+  -27, 0, -16,
+  6, 3, 4
+);
+
+addCollisionBox(
+  27, 0, -16,
+  6, 3, 4
+);
+
+addCollisionBox(
+  -25, 0, 25,
+  7, 4, 4
+);
+
+addCollisionBox(
+  25, 0, 25,
+  7, 4, 4
+);
+
 
 /* ======================================================
    GUNS
@@ -147,6 +334,126 @@ function distanceFromRayToPoint(
   rayDirection,
   point
 ) {
+
+  /* ======================================================
+   RAY VS WALL
+====================================================== */
+
+function rayHitsBox(
+  origin,
+  direction,
+  box,
+  maxDistance = 150
+) {
+
+  let tMin = 0;
+  let tMax = maxDistance;
+
+
+  /* X */
+
+  if (Math.abs(direction.x) < 0.000001) {
+
+    if (
+      origin.x < box.minX ||
+      origin.x > box.maxX
+    ) {
+      return false;
+    }
+
+  } else {
+
+    let tx1 =
+      (box.minX - origin.x) /
+      direction.x;
+
+    let tx2 =
+      (box.maxX - origin.x) /
+      direction.x;
+
+    if (tx1 > tx2) {
+      [tx1, tx2] = [tx2, tx1];
+    }
+
+    tMin = Math.max(tMin, tx1);
+    tMax = Math.min(tMax, tx2);
+
+    if (tMin > tMax) {
+      return false;
+    }
+  }
+
+
+  /* Y */
+
+  if (Math.abs(direction.y) < 0.000001) {
+
+    if (
+      origin.y < box.minY ||
+      origin.y > box.maxY
+    ) {
+      return false;
+    }
+
+  } else {
+
+    let ty1 =
+      (box.minY - origin.y) /
+      direction.y;
+
+    let ty2 =
+      (box.maxY - origin.y) /
+      direction.y;
+
+    if (ty1 > ty2) {
+      [ty1, ty2] = [ty2, ty1];
+    }
+
+    tMin = Math.max(tMin, ty1);
+    tMax = Math.min(tMax, ty2);
+
+    if (tMin > tMax) {
+      return false;
+    }
+  }
+
+
+  /* Z */
+
+  if (Math.abs(direction.z) < 0.000001) {
+
+    if (
+      origin.z < box.minZ ||
+      origin.z > box.maxZ
+    ) {
+      return false;
+    }
+
+  } else {
+
+    let tz1 =
+      (box.minZ - origin.z) /
+      direction.z;
+
+    let tz2 =
+      (box.maxZ - origin.z) /
+      direction.z;
+
+    if (tz1 > tz2) {
+      [tz1, tz2] = [tz2, tz1];
+    }
+
+    tMin = Math.max(tMin, tz1);
+    tMax = Math.min(tMax, tz2);
+
+    if (tMin > tMax) {
+      return false;
+    }
+  }
+
+
+  return tMin <= tMax;
+}
 
   const toPoint = {
 
@@ -796,6 +1103,88 @@ io.on("connection", (socket) => {
         `${player.username} fired ${gun.name}`
       );
 
+/* =================================================
+   CHECK WALL COLLISION FIRST
+================================================= */
+
+let closestWallDistance =
+  Infinity;
+
+
+for (const box of collisionBoxes) {
+
+  if (
+    rayHitsBox(
+      origin,
+      direction,
+      box,
+      150
+    )
+  ) {
+
+    /* Find the approximate distance to the wall */
+
+    let wallDistance = Infinity;
+
+    /*
+      Test the ray in small increments so we know
+      approximately where the wall is.
+    */
+
+    for (
+      let distance = 0;
+      distance <= 150;
+      distance += 0.25
+    ) {
+
+      const x =
+        origin.x +
+        direction.x *
+          distance;
+
+      const y =
+        origin.y +
+        direction.y *
+          distance;
+
+      const z =
+        origin.z +
+        direction.z *
+          distance;
+
+
+      if (
+        x >= box.minX &&
+        x <= box.maxX &&
+        y >= box.minY &&
+        y <= box.maxY &&
+        z >= box.minZ &&
+        z <= box.maxZ
+      ) {
+
+        wallDistance =
+          distance;
+
+        break;
+
+      }
+
+    }
+
+
+    if (
+      wallDistance <
+      closestWallDistance
+    ) {
+
+      closestWallDistance =
+        wallDistance;
+
+    }
+
+  }
+
+}
 
       /* -----------------------------------------------
          FIND TARGET
@@ -897,14 +1286,26 @@ io.on("connection", (socket) => {
 
 
         if (
-          result.distance <=
-          hitboxRadius
-        ) {
+  result.distance <=
+  hitboxRadius
+) {
 
-          if (
-            result.projection <
-            closestDistance
-          ) {
+  /* Wall is between shooter and player */
+
+  if (
+    closestWallDistance <
+    result.projection
+  ) {
+
+    continue;
+
+  }
+
+
+  if (
+    result.projection <
+    closestDistance
+  ) {
 
             closestDistance =
               result.projection;
