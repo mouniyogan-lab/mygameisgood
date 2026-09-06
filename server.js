@@ -1,5 +1,6 @@
 const express = require("express");
 const http = require("http");
+const path = require("path");
 const { Server } = require("socket.io");
 
 const app = express();
@@ -8,12 +9,13 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "https://vmy1.netlify.app",
     methods: ["GET", "POST"]
   }
 });
 
 app.use(express.json());
+app.use(express.static(__dirname));
 
 /* ======================================================
    SERVER
@@ -22,7 +24,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
 app.get("/", (req, res) => {
-  res.send("Neon Strike server is online!");
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
 app.get("/health", (req, res) => {
@@ -322,6 +324,56 @@ function safeNumber(value, fallback = 0) {
 
   return number;
 
+}
+
+function positionCollides(x, y, z) {
+  const playerBottom = y - 2.1;
+  const playerTop = y;
+  const radius = 0.65;
+
+  if (
+    y < 2.1 ||
+    y > 12 ||
+    Math.abs(x) > arenaSize / 2 - radius ||
+    Math.abs(z) > arenaSize / 2 - radius
+  ) {
+    return true;
+  }
+
+  return collisionBoxes.some((box) =>
+    x + radius > box.minX &&
+    x - radius < box.maxX &&
+    z + radius > box.minZ &&
+    z - radius < box.maxZ &&
+    playerTop > box.minY &&
+    playerBottom < box.maxY
+  );
+}
+
+function rayHitsBox(origin, direction, box, maxDistance = 150) {
+  let tMin = 0;
+  let tMax = maxDistance;
+
+  for (const axis of ["x", "y", "z"]) {
+    const component = direction[axis];
+    const originValue = origin[axis];
+    const min = box[`min${axis.toUpperCase()}`];
+    const max = box[`max${axis.toUpperCase()}`];
+
+    if (Math.abs(component) < 0.000001) {
+      if (originValue < min || originValue > max) return false;
+      continue;
+    }
+
+    let near = (min - originValue) / component;
+    let far = (max - originValue) / component;
+    if (near > far) [near, far] = [far, near];
+    tMin = Math.max(tMin, near);
+    tMax = Math.min(tMax, far);
+    if (tMin > tMax) return false;
+  }
+
+  return true;
 }
 
 
@@ -854,6 +906,16 @@ io.on("connection", (socket) => {
 
       }
 
+      if (
+        positionCollides(
+          newX,
+          newY,
+          newZ
+        )
+      ) {
+        return;
+      }
+
 
       player.position = {
 
@@ -953,6 +1015,14 @@ io.on("connection", (socket) => {
 
       }
 
+      if (!player.ownedGuns[gunId]) {
+        console.log(
+          "SHOT REJECTED: gun not owned",
+          gunId
+        );
+        return;
+      }
+
 
       /* -----------------------------------------------
          SERVER-SIDE FIRE RATE
@@ -1014,6 +1084,23 @@ io.on("connection", (socket) => {
           )
 
       };
+
+      const originDistance = Math.sqrt(
+        (origin.x - player.position.x) ** 2 +
+        (origin.y - player.position.y) ** 2 +
+        (origin.z - player.position.z) ** 2
+      );
+
+      if (
+        originDistance > 3 ||
+        origin.y < player.position.y - 2 ||
+        origin.y > player.position.y + 1
+      ) {
+        console.log(
+          "SHOT REJECTED: invalid origin"
+        );
+        return;
+      }
 
 
       /* -----------------------------------------------
