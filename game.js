@@ -10,11 +10,6 @@ const socket = io(SERVER_URL, {
   autoConnect: true
 });
 
-
-/* ======================================================
-   SCENE
-====================================================== */
-
 const scene = new THREE.Scene();
 
 scene.background =
@@ -26,11 +21,6 @@ scene.fog =
     45,
     190
   );
-
-
-/* ======================================================
-   CAMERA
-====================================================== */
 
 const camera =
   new THREE.PerspectiveCamera(
@@ -46,11 +36,6 @@ camera.position.set(
   2.1,
   25
 );
-
-
-/* ======================================================
-   RENDERER
-====================================================== */
 
 const renderer =
   new THREE.WebGLRenderer({
@@ -84,21 +69,11 @@ document
   .getElementById("game")
   .appendChild(renderer.domElement);
 
-
-/* ======================================================
-   POINTER LOCK
-====================================================== */
-
 const controls =
   new THREE.PointerLockControls(
     camera,
     document.body
   );
-
-
-/* ======================================================
-   UI
-====================================================== */
 
 const healthValue =
   document.getElementById(
@@ -144,6 +119,47 @@ const statusText =
   document.getElementById(
     "statusText"
   );
+/* ======================================================
+   MOBILE CONTROLS
+====================================================== */
+
+const mobileControls =
+  document.getElementById("mobileControls");
+
+const joystickZone =
+  document.getElementById("joystickZone");
+
+const joystickKnob =
+  document.getElementById("joystickKnob");
+
+const lookZone =
+  document.getElementById("lookZone");
+
+const mobileJump =
+  document.getElementById("mobileJump");
+
+const mobileFire =
+  document.getElementById("mobileFire");
+
+const mobileShop =
+  document.getElementById("mobileShop");
+
+const isTouchDevice =
+  window.matchMedia("(pointer: coarse)").matches;
+
+let mobileActive = false;
+
+let joystickActive = false;
+
+let joystickTouchId = null;
+
+let lookTouchId = null;
+
+let lastLookX = 0;
+
+let lastLookY = 0;
+
+const mobileLookSensitivity = 0.004;
 
 const damageFlash =
   document.getElementById(
@@ -185,11 +201,6 @@ const gunList =
     "gunList"
   );
 
-
-/* ======================================================
-   PLAYER STATE
-====================================================== */
-
 let localPlayerId =
   null;
 
@@ -211,13 +222,7 @@ let ownedGuns = {
   pistol: true
 };
 
-
-/* ======================================================
-   GUNS
-====================================================== */
-
 const GUNS = {
-
   pistol: {
     name: "Pistol",
     price: 0,
@@ -262,24 +267,13 @@ const GUNS = {
     color: 0xff47ff,
     barrelScale: 1.55
   }
-
 };
 
-
-/* ======================================================
-   MOVEMENT
-====================================================== */
-
 const movement = {
-
   forward: false,
-
   backward: false,
-
   left: false,
-
   right: false
-
 };
 
 let verticalVelocity = 0;
@@ -291,11 +285,6 @@ const jumpStrength = 10;
 const gravity = 28;
 
 const groundY = 2.1;
-
-
-/* ======================================================
-   GAME DATA
-====================================================== */
 
 const otherPlayers =
   new Map();
@@ -328,7 +317,6 @@ const ambient =
 
 scene.add(ambient);
 
-
 const moon =
   new THREE.DirectionalLight(
     0x7ca7ff,
@@ -351,7 +339,6 @@ moon.shadow.mapSize.height =
 
 scene.add(moon);
 
-
 const cyan =
   new THREE.PointLight(
     0x00bbff,
@@ -367,7 +354,6 @@ cyan.position.set(
 );
 
 scene.add(cyan);
-
 
 const red =
   new THREE.PointLight(
@@ -397,14 +383,12 @@ const floorMaterial =
     metalness: 0.08
   });
 
-
 const wallMaterial =
   new THREE.MeshStandardMaterial({
     color: 0x30353a,
     roughness: 0.82,
     metalness: 0.18
   });
-
 
 const darkWallMaterial =
   new THREE.MeshStandardMaterial({
@@ -413,14 +397,12 @@ const darkWallMaterial =
     metalness: 0.25
   });
 
-
 const concreteMaterial =
   new THREE.MeshStandardMaterial({
     color: 0x4b5054,
     roughness: 0.9,
     metalness: 0.08
   });
-
 
 const metalMaterial =
   new THREE.MeshStandardMaterial({
@@ -429,7 +411,6 @@ const metalMaterial =
     metalness: 0.82
   });
 
-
 const crateMaterial =
   new THREE.MeshStandardMaterial({
     color: 0x695039,
@@ -437,14 +418,12 @@ const crateMaterial =
     metalness: 0.02
   });
 
-
 const warningMaterial =
   new THREE.MeshStandardMaterial({
     color: 0x8a741f,
     roughness: 0.65,
     metalness: 0.2
   });
-
 
 const redMaterial =
   new THREE.MeshStandardMaterial({
@@ -492,7 +471,6 @@ for (
   i <= arenaSize / 2;
   i += 6
 ) {
-
   scene.add(
     new THREE.Line(
       new THREE.BufferGeometry()
@@ -502,7 +480,6 @@ for (
             0.015,
             -arenaSize / 2
           ),
-
           new THREE.Vector3(
             i,
             0.015,
@@ -513,7 +490,6 @@ for (
     )
   );
 
-
   scene.add(
     new THREE.Line(
       new THREE.BufferGeometry()
@@ -523,7 +499,6 @@ for (
             0.016,
             i
           ),
-
           new THREE.Vector3(
             arenaSize / 2,
             0.016,
@@ -533,12 +508,11 @@ for (
       tileMaterial
     )
   );
-
 }
 
 
 /* ======================================================
-   COLLISION BOX
+   COLLISION BOX HELPER
 ====================================================== */
 
 function addBox(
@@ -550,7 +524,6 @@ function addBox(
   depth,
   material = concreteMaterial
 ) {
-
   const mesh =
     new THREE.Mesh(
       new THREE.BoxGeometry(
@@ -574,7 +547,6 @@ function addBox(
   scene.add(mesh);
 
   collisionBoxes.push({
-
     minX:
       x - width / 2,
 
@@ -591,11 +563,9 @@ function addBox(
 
     maxZ:
       z + depth / 2
-
   });
 
   return mesh;
-
 }
 
 
@@ -611,7 +581,6 @@ function createMapWall(
   height,
   depth
 ) {
-
   const wall =
     new THREE.Mesh(
       new THREE.BoxGeometry(
@@ -634,7 +603,6 @@ function createMapWall(
 
   scene.add(wall);
 
-
   const top =
     new THREE.Mesh(
       new THREE.BoxGeometry(
@@ -653,9 +621,7 @@ function createMapWall(
 
   scene.add(top);
 
-
   collisionBoxes.push({
-
     minX:
       x - width / 2,
 
@@ -672,11 +638,8 @@ function createMapWall(
 
     maxZ:
       z + depth / 2
-
   });
-
 }
-
 
 createMapWall(
   0,
@@ -726,7 +689,6 @@ function createBuilding(
   depth,
   height
 ) {
-
   const building =
     new THREE.Mesh(
       new THREE.BoxGeometry(
@@ -749,7 +711,6 @@ function createBuilding(
 
   scene.add(building);
 
-
   const roof =
     new THREE.Mesh(
       new THREE.BoxGeometry(
@@ -770,9 +731,7 @@ function createBuilding(
 
   scene.add(roof);
 
-
   collisionBoxes.push({
-
     minX:
       x - width / 2,
 
@@ -789,13 +748,10 @@ function createBuilding(
 
     maxZ:
       z + depth / 2
-
   });
 
   return building;
-
 }
-
 
 createBuilding(
   -40,
@@ -960,7 +916,6 @@ function createCrate(
   z,
   scaleY = 1
 ) {
-
   const size = 2.8;
 
   return addBox(
@@ -972,9 +927,7 @@ function createCrate(
     size,
     crateMaterial
   );
-
 }
-
 
 createCrate(-38, -8);
 createCrate(-35, -8);
@@ -1001,10 +954,8 @@ function createBarrier(
   z,
   rotation = 0
 ) {
-
   const barrier =
     new THREE.Group();
-
 
   const body =
     new THREE.Mesh(
@@ -1022,13 +973,11 @@ function createBarrier(
 
   barrier.add(body);
 
-
   for (
     let i = -1;
     i <= 1;
     i++
   ) {
-
     const leg =
       new THREE.Mesh(
         new THREE.BoxGeometry(
@@ -1046,9 +995,7 @@ function createBarrier(
     );
 
     barrier.add(leg);
-
   }
-
 
   barrier.position.set(
     x,
@@ -1061,7 +1008,6 @@ function createBarrier(
 
   scene.add(barrier);
 
-
   const cos =
     Math.abs(
       Math.cos(rotation)
@@ -1072,7 +1018,6 @@ function createBarrier(
       Math.sin(rotation)
     );
 
-
   const width =
     5 * cos +
     0.55 * sin;
@@ -1081,9 +1026,7 @@ function createBarrier(
     5 * sin +
     0.55 * cos;
 
-
   collisionBoxes.push({
-
     minX:
       x - width / 2,
 
@@ -1099,11 +1042,8 @@ function createBarrier(
 
     maxZ:
       z + depth / 2
-
   });
-
 }
-
 
 createBarrier(
   -17,
@@ -1138,7 +1078,6 @@ function createPillar(
   x,
   z
 ) {
-
   const pillar =
     new THREE.Mesh(
       new THREE.BoxGeometry(
@@ -1161,9 +1100,7 @@ function createPillar(
 
   scene.add(pillar);
 
-
   collisionBoxes.push({
-
     minX:
       x - 0.7,
 
@@ -1179,11 +1116,8 @@ function createPillar(
 
     maxZ:
       z + 0.7
-
   });
-
 }
-
 
 createPillar(-20, -25);
 createPillar(20, -25);
@@ -1202,7 +1136,6 @@ function createPipe(
   length,
   rotationY = 0
 ) {
-
   const pipe =
     new THREE.Mesh(
       new THREE.CylinderGeometry(
@@ -1229,9 +1162,7 @@ function createPipe(
   pipe.castShadow = true;
 
   scene.add(pipe);
-
 }
-
 
 createPipe(
   -32,
@@ -1264,7 +1195,6 @@ function createStreetLight(
   x,
   z
 ) {
-
   const pole =
     new THREE.Mesh(
       new THREE.CylinderGeometry(
@@ -1286,7 +1216,6 @@ function createStreetLight(
 
   scene.add(pole);
 
-
   const lamp =
     new THREE.Mesh(
       new THREE.BoxGeometry(
@@ -1305,7 +1234,6 @@ function createStreetLight(
 
   scene.add(lamp);
 
-
   const light =
     new THREE.PointLight(
       0xffc66d,
@@ -1321,9 +1249,7 @@ function createStreetLight(
   );
 
   scene.add(light);
-
 }
-
 
 createStreetLight(-30, -35);
 createStreetLight(30, -35);
@@ -1340,7 +1266,6 @@ function createWarningLight(
   y,
   z
 ) {
-
   const light =
     new THREE.PointLight(
       0xff2438,
@@ -1356,7 +1281,6 @@ function createWarningLight(
   );
 
   scene.add(light);
-
 
   const bulb =
     new THREE.Mesh(
@@ -1375,9 +1299,7 @@ function createWarningLight(
   );
 
   scene.add(bulb);
-
 }
-
 
 createWarningLight(
   -49,
@@ -1415,7 +1337,6 @@ function createStripe(
   depth,
   rotation = 0
 ) {
-
   const stripe =
     new THREE.Mesh(
       new THREE.BoxGeometry(
@@ -1436,9 +1357,7 @@ function createStripe(
     rotation;
 
   scene.add(stripe);
-
 }
-
 
 createStripe(-8, -43, 10, 0.35);
 createStripe(8, -43, 10, 0.35);
@@ -1465,7 +1384,6 @@ scene.fog =
 const gun =
   new THREE.Group();
 
-
 const gunBody =
   new THREE.Mesh(
     new THREE.BoxGeometry(
@@ -1488,7 +1406,6 @@ gunBody.position.set(
 
 gun.add(gunBody);
 
-
 const upper =
   new THREE.Mesh(
     new THREE.BoxGeometry(
@@ -1510,7 +1427,6 @@ upper.position.set(
 );
 
 gun.add(upper);
-
 
 const grip =
   new THREE.Mesh(
@@ -1536,7 +1452,6 @@ grip.position.set(
 );
 
 gun.add(grip);
-
 
 const gunBarrel =
   new THREE.Mesh(
@@ -1564,7 +1479,6 @@ gunBarrel.position.set(
 
 gun.add(gunBarrel);
 
-
 const muzzle =
   new THREE.Mesh(
     new THREE.CylinderGeometry(
@@ -1591,7 +1505,6 @@ muzzle.position.set(
 
 gun.add(muzzle);
 
-
 const energy =
   new THREE.Mesh(
     new THREE.BoxGeometry(
@@ -1612,7 +1525,6 @@ energy.position.set(
 
 gun.add(energy);
 
-
 const muzzlePoint =
   new THREE.Object3D();
 
@@ -1627,7 +1539,6 @@ gun.add(muzzlePoint);
 camera.add(gun);
 
 scene.add(camera);
-
 
 const muzzleFlash =
   new THREE.PointLight(
@@ -1651,7 +1562,6 @@ gun.add(muzzleFlash);
 ====================================================== */
 
 function applyGunVisual() {
-
   const weapon =
     GUNS[currentGun];
 
@@ -1676,7 +1586,6 @@ function applyGunVisual() {
 
   gunValue.textContent =
     weapon.name.toUpperCase();
-
 }
 
 
@@ -1689,10 +1598,8 @@ function createTracer(
   direction,
   ownerId
 ) {
-
   const group =
     new THREE.Group();
-
 
   const core =
     new THREE.Mesh(
@@ -1705,7 +1612,6 @@ function createTracer(
         color: 0xffffff
       })
     );
-
 
   const glow =
     new THREE.Mesh(
@@ -1720,7 +1626,6 @@ function createTracer(
         opacity: 0.42
       })
     );
-
 
   const trail =
     new THREE.Mesh(
@@ -1743,13 +1648,11 @@ function createTracer(
   trail.position.z =
     0.35;
 
-
   group.add(core);
 
   group.add(glow);
 
   group.add(trail);
-
 
   group.position.copy(
     origin
@@ -1763,9 +1666,7 @@ function createTracer(
 
   scene.add(group);
 
-
   projectiles.push({
-
     mesh: group,
 
     velocity:
@@ -1777,9 +1678,7 @@ function createTracer(
     ownerId,
 
     age: 0
-
   });
-
 }
 
 
@@ -1790,7 +1689,6 @@ function createTracer(
 function createNameTag(
   username
 ) {
-
   const canvas =
     document.createElement(
       "canvas"
@@ -1800,12 +1698,10 @@ function createNameTag(
 
   canvas.height = 128;
 
-
   const ctx =
     canvas.getContext(
       "2d"
     );
-
 
   ctx.fillStyle =
     "rgba(3,8,15,0.84)";
@@ -1816,7 +1712,6 @@ function createNameTag(
     472,
     78
   );
-
 
   ctx.strokeStyle =
     "rgba(0,220,255,0.7)";
@@ -1830,7 +1725,6 @@ function createNameTag(
     78
   );
 
-
   ctx.font =
     "bold 48px Arial";
 
@@ -1843,19 +1737,16 @@ function createNameTag(
   ctx.fillStyle =
     "#ffffff";
 
-
   ctx.fillText(
     username,
     256,
     64
   );
 
-
   const texture =
     new THREE.CanvasTexture(
       canvas
     );
-
 
   const sprite =
     new THREE.Sprite(
@@ -1866,16 +1757,13 @@ function createNameTag(
       })
     );
 
-
   sprite.scale.set(
     3.2,
     0.8,
     1
   );
 
-
   return sprite;
-
 }
 
 
@@ -1887,10 +1775,8 @@ function createOtherPlayer(
   id,
   username
 ) {
-
   const group =
     new THREE.Group();
-
 
   const body =
     new THREE.Mesh(
@@ -1913,7 +1799,6 @@ function createOtherPlayer(
 
   group.add(body);
 
-
   const chest =
     new THREE.Mesh(
       new THREE.BoxGeometry(
@@ -1934,7 +1819,6 @@ function createOtherPlayer(
 
   group.add(chest);
 
-
   const head =
     new THREE.Mesh(
       new THREE.SphereGeometry(
@@ -1953,7 +1837,6 @@ function createOtherPlayer(
     2.08;
 
   group.add(head);
-
 
   const visor =
     new THREE.Mesh(
@@ -1975,14 +1858,12 @@ function createOtherPlayer(
 
   group.add(visor);
 
-
   const limbMaterial =
     new THREE.MeshStandardMaterial({
       color: 0x0e171e,
       roughness: 0.73,
       metalness: 0.35
     });
-
 
   const leftLeg =
     new THREE.Mesh(
@@ -2002,7 +1883,6 @@ function createOtherPlayer(
 
   group.add(leftLeg);
 
-
   const rightLeg =
     leftLeg.clone();
 
@@ -2010,7 +1890,6 @@ function createOtherPlayer(
     0.22;
 
   group.add(rightLeg);
-
 
   const leftArm =
     new THREE.Mesh(
@@ -2030,7 +1909,6 @@ function createOtherPlayer(
 
   group.add(leftArm);
 
-
   const rightArm =
     leftArm.clone();
 
@@ -2038,7 +1916,6 @@ function createOtherPlayer(
     0.62;
 
   group.add(rightArm);
-
 
   const tag =
     createNameTag(
@@ -2053,52 +1930,39 @@ function createOtherPlayer(
 
   group.add(tag);
 
-
   scene.add(group);
 
-
   const remote = {
-
     id,
-
     username,
-
     group,
-
     targetPosition:
       new THREE.Vector3(),
-
     targetRotationY: 0
-
   };
-
 
   otherPlayers.set(
     id,
     remote
   );
 
-
   return group;
-
 }
 
 
 /* ======================================================
-   KEYBOARD INPUT
+   INPUT
 ====================================================== */
 
 window.addEventListener(
   "keydown",
   (event) => {
-
     if (
       event.code ===
       "KeyW"
     ) {
       movement.forward = true;
     }
-
 
     if (
       event.code ===
@@ -2107,14 +1971,12 @@ window.addEventListener(
       movement.backward = true;
     }
 
-
     if (
       event.code ===
       "KeyA"
     ) {
       movement.left = true;
     }
-
 
     if (
       event.code ===
@@ -2123,69 +1985,51 @@ window.addEventListener(
       movement.right = true;
     }
 
-
     if (
       event.code ===
       "Space"
     ) {
-
       if (
         isGrounded &&
         controls.isLocked &&
         playerJoined
       ) {
-
         verticalVelocity =
           jumpStrength;
 
         isGrounded = false;
-
       }
-
     }
-
 
     if (
       event.code ===
       "KeyB"
     ) {
-
       if (
         playerJoined
       ) {
-
         if (
           shopPanel.style.display ===
           "block"
         ) {
-
           closeGunShop();
-
         } else {
-
           openGunShop();
-
         }
-
       }
-
     }
-
   }
 );
-
 
 window.addEventListener(
   "keyup",
   (event) => {
-
     if (
       event.code ===
       "KeyW"
     ) {
       movement.forward = false;
     }
-
 
     if (
       event.code ===
@@ -2194,7 +2038,6 @@ window.addEventListener(
       movement.backward = false;
     }
 
-
     if (
       event.code ===
       "KeyA"
@@ -2202,22 +2045,18 @@ window.addEventListener(
       movement.left = false;
     }
 
-
     if (
       event.code ===
       "KeyD"
     ) {
       movement.right = false;
     }
-
   }
 );
-
 
 window.addEventListener(
   "blur",
   () => {
-
     movement.forward = false;
 
     movement.backward = false;
@@ -2225,11 +2064,339 @@ window.addEventListener(
     movement.left = false;
 
     movement.right = false;
-
   }
 );
 
+/* ======================================================
+   MOBILE JOYSTICK
+====================================================== */
 
+function resetJoystick() {
+  joystickActive = false;
+  joystickTouchId = null;
+
+  joystickKnob.style.transform =
+    "translate(0px, 0px)";
+
+  movement.forward = false;
+  movement.backward = false;
+  movement.left = false;
+  movement.right = false;
+}
+
+function updateJoystick(
+  touch
+) {
+  const rect =
+    joystickZone.getBoundingClientRect();
+
+  const centerX =
+    rect.left +
+    rect.width / 2;
+
+  const centerY =
+    rect.top +
+    rect.height / 2;
+
+  let dx =
+    touch.clientX -
+    centerX;
+
+  let dy =
+    touch.clientY -
+    centerY;
+
+  const maxDistance = 42;
+
+  const distance =
+    Math.sqrt(
+      dx * dx +
+      dy * dy
+    );
+
+  if (
+    distance >
+    maxDistance
+  ) {
+    dx =
+      (dx / distance) *
+      maxDistance;
+
+    dy =
+      (dy / distance) *
+      maxDistance;
+  }
+
+  joystickKnob.style.transform =
+    `translate(${dx}px, ${dy}px)`;
+
+  const threshold = 12;
+
+  movement.left =
+    dx < -threshold;
+
+  movement.right =
+    dx > threshold;
+
+  movement.forward =
+    dy < -threshold;
+
+  movement.backward =
+    dy > threshold;
+}
+
+
+joystickZone.addEventListener(
+  "touchstart",
+  (event) => {
+    if (!mobileActive) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const touch =
+      event.changedTouches[0];
+
+    joystickActive = true;
+
+    joystickTouchId =
+      touch.identifier;
+
+    updateJoystick(touch);
+  },
+  { passive: false }
+);
+
+
+joystickZone.addEventListener(
+  "touchmove",
+  (event) => {
+    if (
+      !joystickActive
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    for (
+      const touch of
+      event.changedTouches
+    ) {
+      if (
+        touch.identifier ===
+        joystickTouchId
+      ) {
+        updateJoystick(touch);
+      }
+    }
+  },
+  { passive: false }
+);
+
+
+joystickZone.addEventListener(
+  "touchend",
+  (event) => {
+    for (
+      const touch of
+      event.changedTouches
+    ) {
+      if (
+        touch.identifier ===
+        joystickTouchId
+      ) {
+        resetJoystick();
+      }
+    }
+  },
+  { passive: false }
+);
+
+
+joystickZone.addEventListener(
+  "touchcancel",
+  resetJoystick,
+  { passive: false }
+);
+
+/* ======================================================
+   MOBILE CAMERA LOOK
+====================================================== */
+
+lookZone.addEventListener(
+  "touchstart",
+  (event) => {
+    if (!mobileActive) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const touch =
+      event.changedTouches[0];
+
+    lookTouchId =
+      touch.identifier;
+
+    lastLookX =
+      touch.clientX;
+
+    lastLookY =
+      touch.clientY;
+  },
+  { passive: false }
+);
+
+
+lookZone.addEventListener(
+  "touchmove",
+  (event) => {
+    if (
+      !mobileActive ||
+      lookTouchId === null
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    for (
+      const touch of
+      event.changedTouches
+    ) {
+      if (
+        touch.identifier !==
+        lookTouchId
+      ) {
+        continue;
+      }
+
+      const dx =
+        touch.clientX -
+        lastLookX;
+
+      const dy =
+        touch.clientY -
+        lastLookY;
+
+      lastLookX =
+        touch.clientX;
+
+      lastLookY =
+        touch.clientY;
+
+      camera.rotation.y -=
+        dx *
+        mobileLookSensitivity;
+
+      camera.rotation.x -=
+        dy *
+        mobileLookSensitivity;
+
+      const maxPitch =
+        Math.PI / 2 - 0.05;
+
+      camera.rotation.x =
+        Math.max(
+          -maxPitch,
+          Math.min(
+            maxPitch,
+            camera.rotation.x
+          )
+        );
+    }
+  },
+  { passive: false }
+);
+
+
+lookZone.addEventListener(
+  "touchend",
+  (event) => {
+    for (
+      const touch of
+      event.changedTouches
+    ) {
+      if (
+        touch.identifier ===
+        lookTouchId
+      ) {
+        lookTouchId = null;
+      }
+    }
+  },
+  { passive: false }
+);
+
+
+lookZone.addEventListener(
+  "touchcancel",
+  () => {
+    lookTouchId = null;
+  },
+  { passive: false }
+);
+
+/* ======================================================
+   MOBILE BUTTONS
+====================================================== */
+
+mobileJump.addEventListener(
+  "touchstart",
+  (event) => {
+    event.preventDefault();
+
+    if (
+      mobileActive &&
+      isGrounded &&
+      playerJoined
+    ) {
+      verticalVelocity =
+        jumpStrength;
+
+      isGrounded = false;
+    }
+  },
+  { passive: false }
+);
+
+
+mobileFire.addEventListener(
+  "touchstart",
+  (event) => {
+    event.preventDefault();
+
+    if (mobileActive) {
+      shoot();
+    }
+  },
+  { passive: false }
+);
+
+
+mobileShop.addEventListener(
+  "touchstart",
+  (event) => {
+    event.preventDefault();
+
+    if (
+      mobileActive &&
+      playerJoined
+    ) {
+      if (
+        shopPanel.style.display ===
+        "block"
+      ) {
+        closeGunShop();
+      } else {
+        openGunShop();
+      }
+    }
+  },
+  { passive: false }
+);
 /* ======================================================
    COLLISION
 ====================================================== */
@@ -2237,12 +2404,10 @@ window.addEventListener(
 function collides(
   position
 ) {
-
   const limit =
     arenaSize / 2 -
     playerRadius -
     1;
-
 
   if (
     position.x < -limit ||
@@ -2250,11 +2415,8 @@ function collides(
     position.z < -limit ||
     position.z > limit
   ) {
-
     return true;
-
   }
-
 
   const minX =
     position.x -
@@ -2272,27 +2434,20 @@ function collides(
     position.z +
     playerRadius;
 
-
   for (
     const box of collisionBoxes
   ) {
-
     if (
       maxX > box.minX &&
       minX < box.maxX &&
       maxZ > box.minZ &&
       minZ < box.maxZ
     ) {
-
       return true;
-
     }
-
   }
 
-
   return false;
-
 }
 
 
@@ -2309,20 +2464,15 @@ const right =
 const move =
   new THREE.Vector3();
 
-
 function updateMovement(
   delta
 ) {
-
   if (
     !controls.isLocked ||
     !playerJoined
   ) {
-
     return;
-
   }
-
 
   move.set(
     0,
@@ -2330,114 +2480,83 @@ function updateMovement(
     0
   );
 
-
   if (
     movement.forward
   ) {
-
     move.z -= 1;
-
   }
-
 
   if (
     movement.backward
   ) {
-
     move.z += 1;
-
   }
-
 
   if (
     movement.left
   ) {
-
     move.x -= 1;
-
   }
-
 
   if (
     movement.right
   ) {
-
     move.x += 1;
-
   }
-
 
   if (
     move.lengthSq() > 0
   ) {
-
     move.normalize();
-
 
     camera.getWorldDirection(
       forward
     );
 
-
     forward.y = 0;
-
 
     if (
       forward.lengthSq() > 0
     ) {
-
       forward.normalize();
-
     }
-
 
     right.crossVectors(
       forward,
       camera.up
     );
 
-
     if (
       right.lengthSq() > 0
     ) {
-
       right.normalize();
-
     }
-
 
     const velocity =
       new THREE.Vector3();
-
 
     velocity.addScaledVector(
       forward,
       -move.z
     );
 
-
     velocity.addScaledVector(
       right,
       move.x
     );
 
-
     if (
       velocity.lengthSq() > 0
     ) {
-
       velocity.normalize();
 
       velocity.multiplyScalar(
         20 * delta
       );
-
     }
-
 
     const next =
       camera.position.clone();
-
 
     next.x +=
       velocity.x;
@@ -2445,23 +2564,18 @@ function updateMovement(
     next.z +=
       velocity.z;
 
-
     if (
       !collides(next)
     ) {
-
       camera.position.x =
         next.x;
 
       camera.position.z =
         next.z;
-
     }
-
   }
 
-
-  /* GRAVITY */
+  /* GRAVITY ALWAYS RUNS */
 
   verticalVelocity -=
     gravity * delta;
@@ -2469,12 +2583,10 @@ function updateMovement(
   camera.position.y +=
     verticalVelocity * delta;
 
-
   if (
     camera.position.y <=
     groundY
   ) {
-
     camera.position.y =
       groundY;
 
@@ -2482,30 +2594,21 @@ function updateMovement(
       0;
 
     isGrounded = true;
-
   }
-
-
-  /* NETWORK */
 
   networkTimer +=
     delta;
-
 
   if (
     networkTimer >=
     0.05
   ) {
-
     networkTimer = 0;
-
 
     socket.emit(
       "playerMove",
       {
-
         position: {
-
           x:
             camera.position.x,
 
@@ -2514,11 +2617,9 @@ function updateMovement(
 
           z:
             camera.position.z
-
         },
 
         rotation: {
-
           x:
             camera.rotation.x,
 
@@ -2527,14 +2628,10 @@ function updateMovement(
 
           z:
             camera.rotation.z
-
         }
-
       }
     );
-
   }
-
 }
 
 
@@ -2543,46 +2640,33 @@ function updateMovement(
 ====================================================== */
 
 function shoot() {
-
   if (
     !controls.isLocked ||
     !playerJoined
   ) {
-
     return;
-
   }
-
 
   const weapon =
     GUNS[currentGun];
 
-
   if (!weapon) {
-
     return;
-
   }
-
 
   const now =
     performance.now();
-
 
   if (
     now -
       lastShotTime <
     weapon.cooldown
   ) {
-
     return;
-
   }
-
 
   lastShotTime =
     now;
-
 
   const origin =
     new THREE.Vector3();
@@ -2590,19 +2674,15 @@ function shoot() {
   const direction =
     new THREE.Vector3();
 
-
   muzzlePoint.getWorldPosition(
     origin
   );
-
 
   camera.getWorldDirection(
     direction
   );
 
-
   direction.normalize();
-
 
   createTracer(
     origin,
@@ -2610,43 +2690,32 @@ function shoot() {
     localPlayerId
   );
 
-
   muzzleFlash.intensity =
     5;
 
-
   setTimeout(
     () => {
-
       muzzleFlash.intensity =
         0;
-
     },
     45
   );
 
-
   gun.position.z =
     0.08;
 
-
   setTimeout(
     () => {
-
       gun.position.z =
         0;
-
     },
     65
   );
 
-
   socket.emit(
     "shoot",
     {
-
       origin: {
-
         x:
           origin.x,
 
@@ -2655,11 +2724,9 @@ function shoot() {
 
         z:
           origin.z
-
       },
 
       direction: {
-
         x:
           direction.x,
 
@@ -2668,30 +2735,22 @@ function shoot() {
 
         z:
           direction.z
-
       },
 
       gunId:
         currentGun
-
     }
   );
-
 }
-
 
 window.addEventListener(
   "mousedown",
   (event) => {
-
     if (
       event.button === 0
     ) {
-
       shoot();
-
     }
-
   }
 );
 
@@ -2701,53 +2760,39 @@ window.addEventListener(
 ====================================================== */
 
 function openGunShop() {
-
   if (
     !playerJoined
   ) {
-
     return;
-
   }
-
 
   renderShop();
 
   shopPanel.style.display =
     "block";
-
 }
-
 
 function closeGunShop() {
-
   shopPanel.style.display =
     "none";
-
 }
-
 
 shopButton.addEventListener(
   "click",
   openGunShop
 );
 
-
 closeShop.addEventListener(
   "click",
   closeGunShop
 );
 
-
 function renderShop() {
-
   shopCoins.textContent =
     `Coins: ${coins}`;
 
-
   gunList.innerHTML =
     "";
-
 
   for (
     const [
@@ -2757,33 +2802,26 @@ function renderShop() {
       GUNS
     )
   ) {
-
     const card =
       document.createElement(
         "div"
       );
 
-
     card.className =
       "gunCard";
 
-
     const owned =
       !!ownedGuns[gunId];
-
 
     const equipped =
       currentGun ===
       gunId;
 
-
     let action = "";
-
 
     if (
       equipped
     ) {
-
       action = `
         <button
           class="gunAction equippedButton"
@@ -2792,11 +2830,9 @@ function renderShop() {
           EQUIPPED
         </button>
       `;
-
     } else if (
       owned
     ) {
-
       action = `
         <button
           class="gunAction equipButton"
@@ -2805,9 +2841,7 @@ function renderShop() {
           EQUIP
         </button>
       `;
-
     } else {
-
       action = `
         <button
           class="gunAction buyButton"
@@ -2816,9 +2850,7 @@ function renderShop() {
           BUY ${weapon.price}
         </button>
       `;
-
     }
-
 
     const hex =
       weapon.color
@@ -2828,12 +2860,9 @@ function renderShop() {
           "0"
         );
 
-
     card.innerHTML = `
       <div class="gunTop">
-
         <div>
-
           <div
             class="gunName"
             style="color:#${hex}"
@@ -2842,39 +2871,28 @@ function renderShop() {
           </div>
 
           <div class="gunStats">
-
             Damage:
             ${weapon.damage}
-
             &nbsp; | &nbsp;
-
             Fire Rate:
             ${weapon.cooldown}ms
-
             &nbsp; | &nbsp;
-
             ${
               weapon.price === 0
                 ? "FREE"
                 : `${weapon.price} COINS`
             }
-
           </div>
-
         </div>
 
         ${action}
-
       </div>
     `;
-
 
     gunList.appendChild(
       card
     );
-
   }
-
 
   document
     .querySelectorAll(
@@ -2882,22 +2900,17 @@ function renderShop() {
     )
     .forEach(
       (button) => {
-
         button.addEventListener(
           "click",
           () => {
-
             socket.emit(
               "buyGun",
               button.dataset.buy
             );
-
           }
         );
-
       }
     );
-
 
   document
     .querySelectorAll(
@@ -2905,33 +2918,27 @@ function renderShop() {
     )
     .forEach(
       (button) => {
-
         button.addEventListener(
           "click",
           () => {
-
             socket.emit(
               "equipGun",
               button.dataset.equip
             );
-
           }
         );
-
       }
     );
-
 }
 
 
 /* ======================================================
-   PLAY / POINTER LOCK
+   POINTER LOCK / PLAY
 ====================================================== */
 
 playButton.addEventListener(
   "click",
   () => {
-
     let name =
       usernameInput.value
         .trim()
@@ -2944,9 +2951,7 @@ playButton.addEventListener(
           16
         );
 
-
     if (!name) {
-
       name =
         "Player" +
         Math.floor(
@@ -2954,22 +2959,17 @@ playButton.addEventListener(
             9000 +
             1000
         );
-
     }
-
 
     playerName =
       name;
 
-
     statusText.textContent =
       "Connecting to server...";
-
 
     if (
       socket.connected
     ) {
-
       socket.emit(
         "joinGame",
         {
@@ -2977,137 +2977,110 @@ playButton.addEventListener(
             playerName
         }
       );
-
     } else {
-
       socket.connect();
-
     }
-
   }
 );
-
 
 controls.addEventListener(
   "lock",
   () => {
-
     startOverlay.style.display =
       "none";
-
   }
 );
-
 
 controls.addEventListener(
   "unlock",
   () => {
-
     if (
       health > 0
     ) {
-
       startOverlay.style.display =
         "flex";
-
 
       if (
         playerJoined
       ) {
-
         statusText.textContent =
           "Click PLAY to resume";
-
       }
-
     }
-
   }
 );
-
 
 usernameInput.addEventListener(
   "keydown",
   (event) => {
-
     if (
       event.code ===
       "Enter"
     ) {
-
       playButton.click();
-
     }
-
   }
 );
 
 
-```js
 /* ======================================================
    SOCKET CONNECTION
 ====================================================== */
 
-socket.on("connect", () => {
+socket.on(
+  "connect",
+  () => {
+    console.log(
+      "CONNECTED TO SERVER:",
+      socket.id
+    );
 
-  console.log("CONNECTED TO SERVER:", socket.id);
+    statusText.textContent =
+      "Connected";
 
-  statusText.textContent = "Connected";
-
-  // Reset connection state for the new socket
-  localPlayerId = socket.id;
-  playerJoined = false;
-
-  // Automatically join again if we already have a username
-  if (playerName && playerName.trim() !== "") {
-
-    console.log("REJOINING GAME AS:", playerName);
-
-    socket.emit("joinGame", {
-      username: playerName
-    });
-
+    if (
+      playerName &&
+      !playerJoined
+    ) {
+      socket.emit(
+        "joinGame",
+        {
+          username:
+            playerName
+        }
+      );
+    }
   }
-});
+);
 
+socket.on(
+  "disconnect",
+  (reason) => {
+    console.log(
+      "DISCONNECTED:",
+      reason
+    );
 
-socket.on("disconnect", (reason) => {
+    playerJoined =
+      false;
 
-  console.log("DISCONNECTED:", reason);
+    statusText.textContent =
+      "Disconnected - reconnecting...";
+  }
+);
 
-  playerJoined = false;
-  localPlayerId = null;
+socket.on(
+  "connect_error",
+  (error) => {
+    console.log(
+      "CONNECTION ERROR:",
+      error.message
+    );
 
-  statusText.textContent =
-    "Disconnected - reconnecting...";
-
-});
-
-
-socket.on("connect_error", (error) => {
-
-  console.log("CONNECTION ERROR:", error.message);
-
-  statusText.textContent =
-    "Server waking up...";
-
-});
-
-
-socket.on("reconnect", (attempt) => {
-
-  console.log("RECONNECTED AFTER ATTEMPT:", attempt);
-
-});
-
-
-socket.on("reconnect_attempt", (attempt) => {
-
-  console.log("RECONNECT ATTEMPT:", attempt);
-
-});
-```
-
+    statusText.textContent =
+      "Server waking up...";
+  }
+);
 
 
 /* ======================================================
@@ -3117,32 +3090,26 @@ socket.on("reconnect_attempt", (attempt) => {
 socket.on(
   "joinAccepted",
   (data) => {
-
     localPlayerId =
       data.id;
 
-
     playerJoined =
       true;
-
 
     health =
       Number(
         data.health
       );
 
-
     score =
       Number(
         data.score
       );
 
-
     coins =
       Number(
         data.coins || 0
       );
-
 
     ownedGuns =
       data.ownedGuns ||
@@ -3150,11 +3117,9 @@ socket.on(
         pistol: true
       };
 
-
     currentGun =
       data.currentGun ||
       "pistol";
-
 
     camera.position.set(
       data.position.x,
@@ -3162,11 +3127,9 @@ socket.on(
       data.position.z
     );
 
-
     verticalVelocity = 0;
 
     isGrounded = true;
-
 
     healthValue.textContent =
       health;
@@ -3177,24 +3140,19 @@ socket.on(
     coinsValue.textContent =
       coins;
 
-
     applyGunVisual();
 
     renderShop();
 
     updatePlayerCount();
 
-
     statusText.textContent =
       "Connected";
-
 
     startOverlay.style.display =
       "none";
 
-
     controls.lock();
-
   }
 );
 
@@ -3206,31 +3164,23 @@ socket.on(
 socket.on(
   "existingPlayers",
   (players) => {
-
     for (
       const player of players
     ) {
-
       if (
         player.id ===
         localPlayerId
       ) {
-
         continue;
-
       }
-
 
       if (
         otherPlayers.has(
           player.id
         )
       ) {
-
         continue;
-
       }
-
 
       const avatar =
         createOtherPlayer(
@@ -3238,40 +3188,31 @@ socket.on(
           player.username
         );
 
-
       avatar.position.set(
         player.position.x,
         0,
         player.position.z
       );
 
-
       avatar.rotation.y =
         player.rotation.y;
-
 
       const remote =
         otherPlayers.get(
           player.id
         );
 
-
       if (remote) {
-
         remote.targetPosition.copy(
           avatar.position
         );
 
         remote.targetRotationY =
           player.rotation.y;
-
       }
-
     }
 
-
     updatePlayerCount();
-
   }
 );
 
@@ -3283,29 +3224,23 @@ socket.on(
 socket.on(
   "playerJoined",
   (player) => {
-
     if (
       player.id ===
       localPlayerId
     ) {
-
       return;
-
     }
-
 
     if (
       !otherPlayers.has(
         player.id
       )
     ) {
-
       const avatar =
         createOtherPlayer(
           player.id,
           player.username
         );
-
 
       avatar.position.set(
         player.position.x,
@@ -3313,15 +3248,11 @@ socket.on(
         player.position.z
       );
 
-
       avatar.rotation.y =
         player.rotation.y;
-
     }
 
-
     updatePlayerCount();
-
   }
 );
 
@@ -3333,29 +3264,21 @@ socket.on(
 socket.on(
   "playerMoved",
   (data) => {
-
     if (
       data.id ===
       localPlayerId
     ) {
-
       return;
-
     }
-
 
     const remote =
       otherPlayers.get(
         data.id
       );
 
-
     if (!remote) {
-
       return;
-
     }
-
 
     remote.targetPosition.set(
       data.position.x,
@@ -3363,10 +3286,8 @@ socket.on(
       data.position.z
     );
 
-
     remote.targetRotationY =
       data.rotation.y;
-
   }
 );
 
@@ -3378,32 +3299,24 @@ socket.on(
 socket.on(
   "playerLeft",
   (id) => {
-
     const remote =
       otherPlayers.get(
         id
       );
 
-
     if (!remote) {
-
       return;
-
     }
-
 
     scene.remove(
       remote.group
     );
 
-
     otherPlayers.delete(
       id
     );
 
-
     updatePlayerCount();
-
   }
 );
 
@@ -3415,10 +3328,8 @@ socket.on(
 socket.on(
   "playerCount",
   (count) => {
-
     playerCountValue.textContent =
       count;
-
   }
 );
 
@@ -3430,19 +3341,14 @@ socket.on(
 socket.on(
   "playerShot",
   (data) => {
-
     if (
       data.id ===
       localPlayerId
     ) {
-
       return;
-
     }
 
-
     createTracer(
-
       new THREE.Vector3(
         data.origin.x,
         data.origin.y,
@@ -3456,9 +3362,7 @@ socket.on(
       ),
 
       data.id
-
     );
-
   }
 );
 
@@ -3467,53 +3371,65 @@ socket.on(
    PLAYER HIT
 ====================================================== */
 
+socket.on(
+  "playerHit",
+  (data) => {
+    if (
+      data.targetId !==
+      localPlayerId
+    ) {
+      return;
+    }
 
-socket.on("playerHit", (data) => {
+    health =
+      Math.max(
+        0,
+        Number(
+          data.health
+        )
+      );
 
-  console.log("PLAYER HIT EVENT RECEIVED:", data);
+    healthValue.textContent =
+      health;
 
-  // Only process damage if THIS player was hit
-  if (data.targetId !== localPlayerId) {
-    return;
+    damageFlash.style.opacity =
+      "1";
+
+    setTimeout(
+      () => {
+        damageFlash.style.opacity =
+          "0";
+      },
+      100
+    );
+
+    hitMarker.style.opacity =
+      "1";
+
+    setTimeout(
+      () => {
+        hitMarker.style.opacity =
+          "0";
+      },
+      100
+    );
+
+    if (
+      health <= 0
+    ) {
+      controls.unlock();
+
+      startOverlay.style.display =
+        "flex";
+
+      statusText.textContent =
+        `Eliminated by ${
+          data.attackerName ||
+          "enemy"
+        }`;
+    }
   }
-
-  // Update health
-  health = Math.max(0, Number(data.health));
-
-  healthValue.textContent = health;
-
-  // Damage flash
-  damageFlash.style.opacity = "1";
-
-  setTimeout(() => {
-    damageFlash.style.opacity = "0";
-  }, 120);
-
-  // Hit marker
-  hitMarker.style.opacity = "1";
-
-  setTimeout(() => {
-    hitMarker.style.opacity = "0";
-  }, 120);
-
-  // Eliminated
-  if (health <= 0) {
-
-    health = 0;
-    healthValue.textContent = "0";
-
-    controls.unlock();
-
-    startOverlay.style.display = "flex";
-
-    statusText.textContent =
-      `Eliminated by ${data.attackerName || "enemy"}`;
-
-  }
-
-});
-
-
+);
 
 
 /* ======================================================
@@ -3523,26 +3439,20 @@ socket.on("playerHit", (data) => {
 socket.on(
   "scoreUpdate",
   (data) => {
-
     if (
       data.id !==
       localPlayerId
     ) {
-
       return;
-
     }
-
 
     score =
       Number(
         data.score
       );
 
-
     scoreValue.textContent =
       score;
-
   }
 );
 
@@ -3554,33 +3464,25 @@ socket.on(
 socket.on(
   "currencyUpdate",
   (data) => {
-
     if (
       data.id !==
       localPlayerId
     ) {
-
       return;
-
     }
-
 
     coins =
       Number(
         data.coins
       );
 
-
     coinsValue.textContent =
       coins;
-
 
     shopCoins.textContent =
       `Coins: ${coins}`;
 
-
     renderShop();
-
   }
 );
 
@@ -3592,86 +3494,67 @@ socket.on(
 socket.on(
   "gunInventory",
   (data) => {
-
     ownedGuns =
       data.ownedGuns ||
       {
         pistol: true
       };
-
 
     currentGun =
       data.currentGun ||
       "pistol";
 
-
     applyGunVisual();
 
     renderShop();
-
   }
 );
-
 
 socket.on(
   "gunPurchased",
   (data) => {
-
     ownedGuns =
       data.ownedGuns ||
       {
         pistol: true
       };
-
 
     coins =
       Number(
         data.coins
       );
 
-
     currentGun =
       data.currentGun ||
       "pistol";
 
-
     coinsValue.textContent =
       coins;
-
 
     applyGunVisual();
 
     renderShop();
-
   }
 );
-
 
 socket.on(
   "gunPurchaseFailed",
   (data) => {
-
     statusText.textContent =
       data.message ||
       "Purchase failed";
 
-
     setTimeout(
       () => {
-
         if (
           controls.isLocked
         ) {
-
           statusText.textContent =
             "Connected";
-
         }
-
       },
       1200
     );
-
   }
 );
 
@@ -3683,32 +3566,24 @@ socket.on(
 socket.on(
   "playerEliminated",
   (data) => {
-
     if (
       data.attackerId ===
       localPlayerId
     ) {
-
       killMessage.textContent =
         "+10 COINS";
-
 
       killMessage.style.opacity =
         "1";
 
-
       setTimeout(
         () => {
-
           killMessage.style.opacity =
             "0";
-
         },
         900
       );
-
     }
-
   }
 );
 
@@ -3720,23 +3595,19 @@ socket.on(
 socket.on(
   "respawn",
   (data) => {
-
     health =
       Number(
         data.health
       );
 
-
     healthValue.textContent =
       health;
-
 
     camera.position.set(
       data.position.x,
       data.position.y,
       data.position.z
     );
-
 
     verticalVelocity = 0;
 
@@ -3745,13 +3616,10 @@ socket.on(
     playerJoined =
       true;
 
-
     startOverlay.style.display =
       "none";
 
-
     controls.lock();
-
   }
 );
 
@@ -3763,7 +3631,6 @@ socket.on(
 function updateRemotePlayers(
   delta
 ) {
-
   const alpha =
     1 -
     Math.pow(
@@ -3771,22 +3638,18 @@ function updateRemotePlayers(
       delta
     );
 
-
   for (
     const player of
     otherPlayers.values()
   ) {
-
     player.group.position.lerp(
       player.targetPosition,
       alpha
     );
 
-
     let difference =
       player.targetRotationY -
       player.group.rotation.y;
-
 
     difference =
       Math.atan2(
@@ -3798,163 +3661,43 @@ function updateRemotePlayers(
         )
       );
 
-
     player.group.rotation.y +=
       difference *
       alpha;
-
   }
-
 }
 
 
-```js
 /* ======================================================
    PROJECTILES
 ====================================================== */
 
-function projectileHitsWall(position) {
-
-  for (const box of collisionBoxes) {
-
-    if (
-      position.x >= box.minX &&
-      position.x <= box.maxX &&
-      position.z >= box.minZ &&
-      position.z <= box.maxZ &&
-      position.y >= box.minY &&
-      position.y <= box.maxY
-    ) {
-
-      return true;
-
-    }
-
-  }
-
-  return false;
-
-}
-
-
-function updateProjectiles(delta) {
-
+function updateProjectiles(
+  delta
+) {
   for (
-    let i = projectiles.length - 1;
+    let i =
+      projectiles.length - 1;
     i >= 0;
     i--
   ) {
-
     const projectile =
       projectiles[i];
 
-    projectile.age += delta;
+    projectile.age +=
+      delta;
 
-
-    /* ==================================================
-       MOVE BULLET
-    ================================================== */
-
-    const movement =
+    projectile.mesh.position.add(
       projectile.velocity
         .clone()
-        .multiplyScalar(delta);
-
-
-    const oldPosition =
-      projectile.mesh.position.clone();
-
-
-    const newPosition =
-      oldPosition
-        .clone()
-        .add(movement);
-
-
-    /* ==================================================
-       WALL COLLISION
-    ================================================== */
-
-    // Check several points along the bullet's path.
-    // This prevents fast bullets from skipping through
-    // thin walls between frames.
-
-    const distance =
-      movement.length();
-
-    const steps =
-      Math.max(
-        1,
-        Math.ceil(distance / 0.25)
-      );
-
-
-    let hitWall = false;
-
-
-    for (
-      let step = 1;
-      step <= steps;
-      step++
-    ) {
-
-      const testPosition =
-        oldPosition.clone().lerp(
-          newPosition,
-          step / steps
-        );
-
-
-      if (
-        projectileHitsWall(
-          testPosition
+        .multiplyScalar(
+          delta
         )
-      ) {
-
-        hitWall = true;
-
-        break;
-
-      }
-
-    }
-
-
-    /* ==================================================
-       REMOVE BULLET IF IT HIT WALL
-    ================================================== */
-
-    if (hitWall) {
-
-      scene.remove(
-        projectile.mesh
-      );
-
-      projectiles.splice(
-        i,
-        1
-      );
-
-      continue;
-
-    }
-
-
-    /* ==================================================
-       APPLY MOVEMENT
-    ================================================== */
-
-    projectile.mesh.position.copy(
-      newPosition
     );
 
-
-    /* ==================================================
-       REMOVE OLD PROJECTILES
-    ================================================== */
-
     if (
-      projectile.age > 1.4 ||
+      projectile.age >
+        1.4 ||
       Math.abs(
         projectile.mesh.position.x
       ) >
@@ -3964,7 +3707,6 @@ function updateProjectiles(delta) {
       ) >
         arenaSize / 2 + 20
     ) {
-
       scene.remove(
         projectile.mesh
       );
@@ -3973,57 +3715,44 @@ function updateProjectiles(delta) {
         i,
         1
       );
-
     }
-
   }
-
 }
-```
+
 
 /* ======================================================
    GUN ANIMATION
 ====================================================== */
 
 function updateGun() {
-
   const moving =
     movement.forward ||
     movement.backward ||
     movement.left ||
     movement.right;
 
-
   if (
     controls.isLocked &&
     moving
   ) {
-
     const t =
       performance.now() *
       0.008;
-
 
     gun.position.y =
       Math.sin(t) *
       0.008;
 
-
     gun.position.x =
       Math.cos(t * 0.5) *
       0.008;
-
   } else {
-
     gun.position.y *=
       0.85;
 
-
     gun.position.x *=
       0.85;
-
   }
-
 }
 
 
@@ -4032,7 +3761,6 @@ function updateGun() {
 ====================================================== */
 
 function updatePlayerCount() {
-
   playerCountValue.textContent =
     String(
       otherPlayers.size +
@@ -4042,7 +3770,6 @@ function updatePlayerCount() {
           : 0
       )
     );
-
 }
 
 
@@ -4053,20 +3780,16 @@ function updatePlayerCount() {
 window.addEventListener(
   "resize",
   () => {
-
     camera.aspect =
       window.innerWidth /
       window.innerHeight;
 
-
     camera.updateProjectionMatrix();
-
 
     renderer.setSize(
       window.innerWidth,
       window.innerHeight
     );
-
   }
 );
 
@@ -4083,11 +3806,9 @@ usernameInput.focus();
 ====================================================== */
 
 function animate() {
-
   requestAnimationFrame(
     animate
   );
-
 
   const delta =
     Math.min(
@@ -4095,31 +3816,24 @@ function animate() {
       0.05
     );
 
-
   updateMovement(
     delta
   );
-
 
   updateRemotePlayers(
     delta
   );
 
-
   updateProjectiles(
     delta
   );
 
-
   updateGun();
-
 
   renderer.render(
     scene,
     camera
   );
-
 }
-
 
 animate();
