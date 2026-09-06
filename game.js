@@ -2339,64 +2339,7 @@ lookZone.addEventListener(
   { passive: false }
 );
 
-/* ======================================================
-   MOBILE BUTTONS
-====================================================== */
 
-mobileJump.addEventListener(
-  "touchstart",
-  (event) => {
-    event.preventDefault();
-
-    if (
-      mobileActive &&
-      isGrounded &&
-      playerJoined
-    ) {
-      verticalVelocity =
-        jumpStrength;
-
-      isGrounded = false;
-    }
-  },
-  { passive: false }
-);
-
-
-mobileFire.addEventListener(
-  "touchstart",
-  (event) => {
-    event.preventDefault();
-
-    if (mobileActive) {
-      shoot();
-    }
-  },
-  { passive: false }
-);
-
-
-mobileShop.addEventListener(
-  "touchstart",
-  (event) => {
-    event.preventDefault();
-
-    if (
-      mobileActive &&
-      playerJoined
-    ) {
-      if (
-        shopPanel.style.display ===
-        "block"
-      ) {
-        closeGunShop();
-      } else {
-        openGunShop();
-      }
-    }
-  },
-  { passive: false }
-);
 /* ======================================================
    COLLISION
 ====================================================== */
