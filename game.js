@@ -3808,17 +3808,39 @@ function updateRemotePlayers(
 }
 
 
+```js
 /* ======================================================
    PROJECTILES
 ====================================================== */
 
-function updateProjectiles(
-  delta
-) {
+function projectileHitsWall(position) {
+
+  for (const box of collisionBoxes) {
+
+    if (
+      position.x >= box.minX &&
+      position.x <= box.maxX &&
+      position.z >= box.minZ &&
+      position.z <= box.maxZ &&
+      position.y >= box.minY &&
+      position.y <= box.maxY
+    ) {
+
+      return true;
+
+    }
+
+  }
+
+  return false;
+
+}
+
+
+function updateProjectiles(delta) {
 
   for (
-    let i =
-      projectiles.length - 1;
+    let i = projectiles.length - 1;
     i >= 0;
     i--
   ) {
@@ -3826,23 +3848,113 @@ function updateProjectiles(
     const projectile =
       projectiles[i];
 
-
-    projectile.age +=
-      delta;
+    projectile.age += delta;
 
 
-    projectile.mesh.position.add(
+    /* ==================================================
+       MOVE BULLET
+    ================================================== */
+
+    const movement =
       projectile.velocity
         .clone()
-        .multiplyScalar(
-          delta
+        .multiplyScalar(delta);
+
+
+    const oldPosition =
+      projectile.mesh.position.clone();
+
+
+    const newPosition =
+      oldPosition
+        .clone()
+        .add(movement);
+
+
+    /* ==================================================
+       WALL COLLISION
+    ================================================== */
+
+    // Check several points along the bullet's path.
+    // This prevents fast bullets from skipping through
+    // thin walls between frames.
+
+    const distance =
+      movement.length();
+
+    const steps =
+      Math.max(
+        1,
+        Math.ceil(distance / 0.25)
+      );
+
+
+    let hitWall = false;
+
+
+    for (
+      let step = 1;
+      step <= steps;
+      step++
+    ) {
+
+      const testPosition =
+        oldPosition.clone().lerp(
+          newPosition,
+          step / steps
+        );
+
+
+      if (
+        projectileHitsWall(
+          testPosition
         )
+      ) {
+
+        hitWall = true;
+
+        break;
+
+      }
+
+    }
+
+
+    /* ==================================================
+       REMOVE BULLET IF IT HIT WALL
+    ================================================== */
+
+    if (hitWall) {
+
+      scene.remove(
+        projectile.mesh
+      );
+
+      projectiles.splice(
+        i,
+        1
+      );
+
+      continue;
+
+    }
+
+
+    /* ==================================================
+       APPLY MOVEMENT
+    ================================================== */
+
+    projectile.mesh.position.copy(
+      newPosition
     );
 
 
+    /* ==================================================
+       REMOVE OLD PROJECTILES
+    ================================================== */
+
     if (
-      projectile.age >
-        1.4 ||
+      projectile.age > 1.4 ||
       Math.abs(
         projectile.mesh.position.x
       ) >
@@ -3857,7 +3969,6 @@ function updateProjectiles(
         projectile.mesh
       );
 
-
       projectiles.splice(
         i,
         1
@@ -3868,7 +3979,7 @@ function updateProjectiles(
   }
 
 }
-
+```
 
 /* ======================================================
    GUN ANIMATION
