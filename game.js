@@ -4001,6 +4001,287 @@ function updateProjectiles(delta) {
   }
 }
 
+/* ======================================================
+   GUN VISUAL SYSTEM
+====================================================== */
+
+const gun = new THREE.Group();
+
+const gunBodyMaterial =
+  new THREE.MeshStandardMaterial({
+    color: 0x6d7881,
+    metalness: 0.8,
+    roughness: 0.3
+  });
+
+const gunBarrelMaterial =
+  new THREE.MeshStandardMaterial({
+    color: 0x15191d,
+    metalness: 0.95,
+    roughness: 0.2
+  });
+
+const gunGlowMaterial =
+  new THREE.MeshBasicMaterial({
+    color: 0x00ffff
+  });
+
+/* Main gun body */
+
+const gunBody =
+  new THREE.Mesh(
+    new THREE.BoxGeometry(
+      0.22,
+      0.18,
+      0.55
+    ),
+    gunBodyMaterial
+  );
+
+gunBody.position.set(
+  0,
+  0,
+  0
+);
+
+gun.add(gunBody);
+
+
+/* Gun barrel */
+
+const gunBarrel =
+  new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      0.035,
+      0.045,
+      0.45,
+      12
+    ),
+    gunBarrelMaterial
+  );
+
+gunBarrel.rotation.x =
+  Math.PI / 2;
+
+gunBarrel.position.set(
+  0,
+  0.02,
+  -0.43
+);
+
+gun.add(gunBarrel);
+
+
+/* Cyan energy strip */
+
+const gunGlow =
+  new THREE.Mesh(
+    new THREE.BoxGeometry(
+      0.045,
+      0.025,
+      0.42
+    ),
+    gunGlowMaterial
+  );
+
+gunGlow.position.set(
+  0,
+  0.1,
+  -0.05
+);
+
+gun.add(gunGlow);
+
+
+/* Handle */
+
+const gunHandle =
+  new THREE.Mesh(
+    new THREE.BoxGeometry(
+      0.14,
+      0.3,
+      0.16
+    ),
+    gunBodyMaterial
+  );
+
+gunHandle.position.set(
+  0,
+  -0.2,
+  0.08
+);
+
+gunHandle.rotation.x =
+  -0.18;
+
+gun.add(gunHandle);
+
+
+/* Position gun in first person */
+
+gun.position.set(
+  0.48,
+  -0.38,
+  -0.75
+);
+
+gun.rotation.set(
+  -0.04,
+  -0.08,
+  0
+);
+
+camera.add(gun);
+
+
+/* ======================================================
+   MUZZLE POINT
+====================================================== */
+
+const muzzlePoint =
+  new THREE.Object3D();
+
+muzzlePoint.position.set(
+  0,
+  0.02,
+  -0.67
+);
+
+gun.add(muzzlePoint);
+
+
+/* ======================================================
+   MUZZLE FLASH
+====================================================== */
+
+const muzzleFlash =
+  new THREE.PointLight(
+    0xffcc66,
+    0,
+    4
+  );
+
+muzzlePoint.add(
+  muzzleFlash
+);
+
+
+/* ======================================================
+   APPLY GUN VISUAL
+====================================================== */
+
+function applyGunVisual() {
+
+  const weapon =
+    GUNS[currentGun];
+
+  if (!weapon) {
+    return;
+  }
+
+  const color =
+    new THREE.Color(
+      weapon.color
+    );
+
+  gunBodyMaterial.color.copy(
+    color
+  );
+
+  gunGlowMaterial.color.copy(
+    color
+  );
+
+  const scale =
+    weapon.barrelScale || 1;
+
+  gunBarrel.scale.set(
+    1,
+    scale,
+    1
+  );
+
+  gun.position.set(
+    0.48,
+    -0.38,
+    -0.75
+  );
+
+  gun.rotation.set(
+    -0.04,
+    -0.08,
+    0
+  );
+
+  gunValue.textContent =
+    weapon.name;
+}
+
+
+/* ======================================================
+   TRACER
+====================================================== */
+
+function createTracer(
+  origin,
+  direction,
+  ownerId
+) {
+
+  const tracerMaterial =
+    new THREE.MeshBasicMaterial({
+      color:
+        GUNS[currentGun]
+          ? GUNS[currentGun].color
+          : 0x00ffff
+    });
+
+  const tracer =
+    new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        0.025,
+        0.025,
+        1.2,
+        8
+      ),
+      tracerMaterial
+    );
+
+  tracer.position.copy(
+    origin
+  );
+
+  const end =
+    origin.clone().add(
+      direction.clone()
+        .multiplyScalar(1.2)
+    );
+
+  tracer.position.lerp(
+    end,
+    0.5
+  );
+
+  tracer.quaternion.setFromUnitVectors(
+    new THREE.Vector3(
+      0,
+      1,
+      0
+    ),
+    direction.clone().normalize()
+  );
+
+  scene.add(tracer);
+
+  setTimeout(
+    () => {
+      scene.remove(tracer);
+      tracer.geometry.dispose();
+      tracer.material.dispose();
+    },
+    70
+  );
+}
 
 /* ======================================================
    GUN ANIMATION
