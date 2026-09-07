@@ -33,7 +33,7 @@ app.use(express.static(__dirname));
    PORT
    ====================================================== */
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000; // Render
 
 /* ======================================================
    HTTP ROUTES
