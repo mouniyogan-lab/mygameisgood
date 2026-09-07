@@ -9,7 +9,10 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "https://vmy1.netlify.app",
+    origin: [
+      "https://vmy1.netlify.app",
+      "https://vimalmouniyogan-ux.github.io"
+    ],
     methods: ["GET", "POST"]
   }
 });
