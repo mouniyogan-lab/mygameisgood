@@ -638,195 +638,417 @@ createMapWall(
 
 
 /* ======================================================
-   BUILDINGS
+   NEON STRIKE 2.0 MAP
+   Multi-level futuristic arena
 ====================================================== */
 
-function createBuilding(
+/* ---------- NEON TRIM ---------- */
+
+const neonMaterial =
+  new THREE.MeshBasicMaterial({
+    color: 0x00ffff
+  });
+
+function addNeonTrim(
+  x,
+  y,
+  z,
+  width,
+  height,
+  depth
+) {
+  const edges =
+    new THREE.LineSegments(
+      new THREE.EdgesGeometry(
+        new THREE.BoxGeometry(
+          width,
+          height,
+          depth
+        )
+      ),
+      neonMaterial
+    );
+
+  edges.position.set(
+    x,
+    y + height / 2,
+    z
+  );
+
+  scene.add(edges);
+}
+
+
+/* ---------- BUILDING ---------- */
+
+function createArenaBuilding(
   x,
   z,
   width,
   depth,
   height
 ) {
-  const building =
-    new THREE.Mesh(
-      new THREE.BoxGeometry(
-        width,
-        height,
-        depth
-      ),
-      darkWallMaterial
-    );
 
-  building.position.set(
+  addBox(
     x,
-    height / 2,
-    z
+    0,
+    z,
+    width,
+    height,
+    depth,
+    darkWallMaterial
   );
 
-  building.castShadow = true;
-
-  building.receiveShadow = true;
-
-  scene.add(building);
-
-  const roof =
-    new THREE.Mesh(
-      new THREE.BoxGeometry(
-        width + 0.4,
-        0.35,
-        depth + 0.4
-      ),
-      metalMaterial
-    );
-
-  roof.position.set(
+  addNeonTrim(
     x,
+    0,
+    z,
+    width + 0.15,
     height + 0.15,
-    z
+    depth + 0.15
   );
 
-  roof.castShadow = true;
+  /* rooftop rim */
 
-  scene.add(roof);
+  addBox(
+    x,
+    height,
+    z,
+    width + 0.5,
+    0.35,
+    depth + 0.5,
+    metalMaterial
+  );
 
-  collisionBoxes.push({
-    minX:
-      x - width / 2,
-
-    maxX:
-      x + width / 2,
-
-    minY: 0,
-
-    maxY:
-      height,
-
-    minZ:
-      z - depth / 2,
-
-    maxZ:
-      z + depth / 2
-  });
-
-  return building;
+  addNeonTrim(
+    x,
+    height,
+    z,
+    width + 0.6,
+    0.15,
+    depth + 0.6
+  );
 }
 
-createBuilding(
-  -40,
-  -27,
-  20,
-  18,
-  8
-);
 
-createBuilding(
-  40,
-  -27,
-  20,
-  18,
-  8
-);
+/* ======================================================
+   OUTER BUILDINGS
+====================================================== */
 
-createBuilding(
+createArenaBuilding(
   -43,
-  30,
-  14,
-  17,
-  6
+  -32,
+  18,
+  20,
+  9
 );
 
-createBuilding(
+createArenaBuilding(
   43,
-  30,
-  14,
-  17,
-  6
+  -32,
+  18,
+  20,
+  9
+);
+
+createArenaBuilding(
+  -43,
+  32,
+  16,
+  18,
+  7
+);
+
+createArenaBuilding(
+  43,
+  32,
+  16,
+  18,
+  7
 );
 
 
 /* ======================================================
-   CENTRAL STRUCTURE
+   CENTRAL FORTRESS
+====================================================== */
+
+/* lower center */
+
+addBox(
+  0,
+  0,
+  -18,
+  30,
+  7,
+  4,
+  concreteMaterial
+);
+
+addNeonTrim(
+  0,
+  0,
+  -18,
+  30.2,
+  7.2,
+  4.2
+);
+
+
+/* left tower */
+
+addBox(
+  -13,
+  0,
+  -8,
+  4,
+  9,
+  20,
+  concreteMaterial
+);
+
+addNeonTrim(
+  -13,
+  0,
+  -8,
+  4.2,
+  9.2,
+  20.2
+);
+
+
+/* right tower */
+
+addBox(
+  13,
+  0,
+  -8,
+  4,
+  9,
+  20,
+  concreteMaterial
+);
+
+addNeonTrim(
+  13,
+  0,
+  -8,
+  4.2,
+  9.2,
+  20.2
+);
+
+
+/* ======================================================
+   SECOND LEVEL CENTER PLATFORM
 ====================================================== */
 
 addBox(
   0,
-  0,
-  -17,
-  28,
   7,
+  -8,
+  22,
+  2,
+  12,
+  metalMaterial
+);
+
+addNeonTrim(
+  0,
+  7,
+  -8,
+  22.2,
+  2.2,
+  12.2
+);
+
+
+/* ======================================================
+   CENTRAL UPPER BLOCK
+====================================================== */
+
+addBox(
+  0,
+  9,
+  -8,
+  10,
+  4,
+  7,
+  darkWallMaterial
+);
+
+addNeonTrim(
+  0,
+  9,
+  -8,
+  10.2,
+  4.2,
+  7.2
+);
+
+
+/* ======================================================
+   ROOFTOP COVER
+====================================================== */
+
+addBox(
+  -7,
+  9,
+  -8,
   3,
+  2,
+  5,
   concreteMaterial
 );
 
 addBox(
-  -14,
-  0,
+  7,
+  9,
   -8,
   3,
-  7,
-  18,
-  concreteMaterial
-);
-
-addBox(
-  14,
-  0,
-  -8,
-  3,
-  7,
-  18,
+  2,
+  5,
   concreteMaterial
 );
 
 
 /* ======================================================
-   LONG COVER WALLS
+   ELEVATED BRIDGES
+====================================================== */
+
+/* left bridge */
+
+addBox(
+  -27,
+  5,
+  -8,
+  14,
+  1.5,
+  3,
+  metalMaterial
+);
+
+addNeonTrim(
+  -27,
+  5,
+  -8,
+  14.2,
+  1.7,
+  3.2
+);
+
+
+/* right bridge */
+
+addBox(
+  27,
+  5,
+  -8,
+  14,
+  1.5,
+  3,
+  metalMaterial
+);
+
+addNeonTrim(
+  27,
+  5,
+  -8,
+  14.2,
+  1.7,
+  3.2
+);
+
+
+/* ======================================================
+   SIDE COVER
 ====================================================== */
 
 addBox(
   -30,
   0,
-  2,
-  14,
+  5,
+  15,
   3,
-  2,
+  2.5,
   concreteMaterial
 );
+
+addNeonTrim(
+  -30,
+  0,
+  5,
+  15.2,
+  3.2,
+  2.7
+);
+
 
 addBox(
   30,
   0,
-  2,
-  14,
+  5,
+  15,
   3,
-  2,
+  2.5,
   concreteMaterial
 );
 
-addBox(
-  -7,
+addNeonTrim(
+  30,
   0,
-  12,
-  12,
-  3,
-  2,
-  concreteMaterial
-);
-
-addBox(
-  7,
-  0,
-  12,
-  12,
-  3,
-  2,
-  concreteMaterial
+  5,
+  15.2,
+  3.2,
+  2.7
 );
 
 
 /* ======================================================
-   SMALL CONCRETE BLOCKS
+   FRONT COVER
+====================================================== */
+
+addBox(
+  -18,
+  0,
+  18,
+  9,
+  3,
+  3,
+  concreteMaterial
+);
+
+addNeonTrim(
+  -18,
+  0,
+  18,
+  9.2,
+  3.2,
+  3.2
+);
+
+
+addBox(
+  18,
+  0,
+  18,
+  9,
+  3,
+  3,
+  concreteMaterial
+);
+
+addNeonTrim(
+  18,
+  0,
+  18,
+  9.2,
+  3.2,
+  3.2
+);
+
+
+/* ======================================================
+   SMALL COVER BLOCKS
 ====================================================== */
 
 addBox(
@@ -835,7 +1057,8 @@ addBox(
   -16,
   6,
   3,
-  4
+  4,
+  concreteMaterial
 );
 
 addBox(
@@ -844,7 +1067,8 @@ addBox(
   -16,
   6,
   3,
-  4
+  4,
+  concreteMaterial
 );
 
 addBox(
@@ -853,7 +1077,8 @@ addBox(
   25,
   7,
   4,
-  4
+  4,
+  concreteMaterial
 );
 
 addBox(
@@ -862,9 +1087,103 @@ addBox(
   25,
   7,
   4,
-  4
+  4,
+  concreteMaterial
 );
 
+
+/* ======================================================
+   ROOFTOP PILLARS
+====================================================== */
+
+addBox(
+  -39,
+  9,
+  -32,
+  3,
+  3,
+  3,
+  concreteMaterial
+);
+
+addBox(
+  -47,
+  9,
+  -32,
+  3,
+  3,
+  3,
+  concreteMaterial
+);
+
+addBox(
+  39,
+  9,
+  -32,
+  3,
+  3,
+  3,
+  concreteMaterial
+);
+
+addBox(
+  47,
+  9,
+  -32,
+  3,
+  3,
+  3,
+  concreteMaterial
+);
+
+
+/* ======================================================
+   EXTRA LOW COVER
+====================================================== */
+
+addBox(
+  -8,
+  0,
+  27,
+  10,
+  2,
+  2,
+  concreteMaterial
+);
+
+addBox(
+  8,
+  0,
+  27,
+  10,
+  2,
+  2,
+  concreteMaterial
+);
+
+
+/* ======================================================
+   NEON CENTER PLATFORM
+====================================================== */
+
+addBox(
+  0,
+  0,
+  8,
+  10,
+  1,
+  10,
+  metalMaterial
+);
+
+addNeonTrim(
+  0,
+  0,
+  8,
+  10.2,
+  1.2,
+  10.2
+);
 
 /* ======================================================
    CRATES
